@@ -13,11 +13,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "/home/yohanneon/Documents/projects/AirQulity/AirQulity.csproj",
+      "projectUniqueName": "/home/yohanneon/Documents/projects/MetroAir/AirQulity.csproj",
       "projectName": "AirQulity",
-      "projectPath": "/home/yohanneon/Documents/projects/AirQulity/AirQulity.csproj",
+      "projectPath": "/home/yohanneon/Documents/projects/MetroAir/AirQulity.csproj",
       "packagesPath": "/home/yohanneon/.nuget/packages/",
-      "outputPath": "/home/yohanneon/Documents/projects/AirQulity/obj/",
+      "outputPath": "/home/yohanneon/Documents/projects/MetroAir/obj/",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "/home/yohanneon/.nuget/NuGet/NuGet.Config"

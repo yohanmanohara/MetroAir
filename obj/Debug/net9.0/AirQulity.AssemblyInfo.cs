@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("AirQulity")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+339d9cc03af5b4cfc93c6f6b1d51ece509f01c79")]
 [assembly: System.Reflection.AssemblyProductAttribute("AirQulity")]
 [assembly: System.Reflection.AssemblyTitleAttribute("AirQulity")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
