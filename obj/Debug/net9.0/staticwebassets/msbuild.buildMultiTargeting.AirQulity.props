@@ -1,3 +1,0 @@
-﻿<Project>
-  <Import Project="../build/AirQulity.props" />
-</Project>

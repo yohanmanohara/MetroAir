@@ -1,0 +1,21 @@
+# .NET build outputs
+bin/
+obj/
+
+# User-specific files
+appsettings.Development.json
+appsettings.json
+
+# IDE-specific files
+.vscode/
+.idea/
+
+# Windows-specific files
+Thumbs.db
+Desktop.ini
+
+# macOS-specific files
+.DS_Store
+
+# ASP.NET Core files
+wwwroot/
