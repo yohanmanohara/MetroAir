@@ -1,19 +1,54 @@
 @model MetroAir.Models.User
 
-<h2>Sign Up</h2>
+@{
+    Layout = null; // Optional: Remove this if your layout includes styles already
+}
 
-<form asp-action="Signup" method="post">
-    <div>
-        <label for="username">Username</label>
-        <input id="username" name="Username" type="text" placeholder="Enter your username" required />
-    </div>
-    <div>
-        <label for="password">Password</label>
-        <input id="password" name="PasswordHash" type="password" placeholder="Enter your password" required />
-    </div>
-    <div>
-        <label for="email">Email</label>
-        <input id="email" name="Email" type="email" placeholder="Enter your email" />
-    </div>
-    <button type="submit">Sign Up</button>
-</form>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Up - MetroAir</title>
+    <link rel="stylesheet" href="~/css/authform.css" asp-append-version="true" />
+</head>
+<body>
+
+<div class="login-container">
+    <h2>Sign Up</h2>
+    
+    <form asp-action="SignUp" method="post">
+        <div class="input-group">
+            <label for="fullname">Full Name</label>
+            <input id="fullname" name="FullName" type="text" class="input-field" placeholder="Enter your full name" required />
+        </div>
+        
+        <div class="input-group">
+            <label for="email">Email</label>
+            <input id="email" name="Email" type="email" class="input-field" placeholder="Enter your email" required />
+        </div>
+        
+        <div class="input-group">
+            <label for="username">Username</label>
+            <input id="username" name="Username" type="text" class="input-field" placeholder="Choose a username" required />
+        </div>
+
+        <div class="input-group">
+            <label for="password">Password</label>
+            <input id="password" name="Password" type="password" class="input-field" placeholder="Create a password" required />
+        </div>
+
+        <div class="input-group">
+            <label for="confirm-password">Confirm Password</label>
+            <input id="confirm-password" name="ConfirmPassword" type="password" class="input-field" placeholder="Confirm your password" required />
+        </div>
+        
+        <button type="submit" class="btn-login">Sign Up</button>
+
+        <p>Already have an account? <a href="@Url.Action("Login", "Account")">Log in</a></p>
+    </form>
+
+</div>
+
+</body>
+</html>

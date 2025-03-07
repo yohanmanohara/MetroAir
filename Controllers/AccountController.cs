@@ -41,9 +41,9 @@ namespace MetroAir.Controllers
         }
 
         [HttpPost]
-        public IActionResult Login(string username, string password)
+        public IActionResult Login(string email, string password)
         {
-            var user = _context.Users.FirstOrDefault(u => u.Username == username);
+            var user = _context.Users.FirstOrDefault(u => u.Email == email);
             if (user != null && PasswordHasher.VerifyPassword(password, user.PasswordHash))
             {
                 // Authentication successful

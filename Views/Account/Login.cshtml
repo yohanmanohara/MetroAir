@@ -1,15 +1,40 @@
 @model MetroAir.Models.LoginViewModel
 
-<h2>Log In</h2>
+@{
+    Layout = null; // Optional: Remove this if your layout includes styles already
+}
 
-<form asp-action="Login" method="post">
-    <div>
-        <label for="username">Username</label>
-        <input id="username" name="Username" type="text" placeholder="Enter your username" required />
-    </div>
-    <div>
-        <label for="password">Password</label>
-        <input id="password" name="Password" type="password" placeholder="Enter your password" required />
-    </div>
-    <button type="submit">Log In</button>
-</form>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - MetroAir</title>
+<link rel="stylesheet" href="~/css/authform.css" asp-append-version="true" /></head>
+<body>
+
+<div class="login-container">
+    <h2>Log In</h2>
+       <form asp-action="Login" method="post">
+        <div class="input-group">
+            <label for="Email">Email</label>
+            <input id="email" name="Email" type="email" class="input-field" placeholder="Enter your Email" required />
+        </div>
+        
+        <p className="bg-blue">km,l</p>
+        <div class="input-group">
+            <label for="password">Password</label>
+            <input id="password" name="Password" type="password" class="input-field" placeholder="Enter your password" required />
+        </div>
+        
+        <button type="submit" class="btn-login">Log In</button>
+
+  <p>Don't have an account? <a href="@Url.Action("signup", "Account")">Sign up</a></p>    
+  </form>
+
+</div>
+
+</body>
+</html>
+
+
