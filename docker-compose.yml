@@ -11,6 +11,7 @@ services:
       - "5000:5000"  # Exposing port 5000 for local access
     volumes:
       - .:/app  # Mount the current directory to /app in the container
+
       - /app/obj  # Mount the obj directory to speed up rebuilds
       - /app/bin  # Mount the bin directory for faster access to build outputs
     environment:
@@ -21,6 +22,7 @@ services:
     working_dir: /app  # Ensure the working directory is correct
     command: dotnet watch run --urls http://0.0.0.0:5000
  # This will use dotnet watch for hot-reloading
+
 
 networks:
   webapp-network:
