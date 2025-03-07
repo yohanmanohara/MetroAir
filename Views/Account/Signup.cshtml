@@ -1,0 +1,19 @@
+@model MetroAir.Models.User
+
+<h2>Sign Up</h2>
+
+<form asp-action="Signup" method="post">
+    <div>
+        <label for="username">Username</label>
+        <input id="username" name="Username" type="text" placeholder="Enter your username" required />
+    </div>
+    <div>
+        <label for="password">Password</label>
+        <input id="password" name="PasswordHash" type="password" placeholder="Enter your password" required />
+    </div>
+    <div>
+        <label for="email">Email</label>
+        <input id="email" name="Email" type="email" placeholder="Enter your email" />
+    </div>
+    <button type="submit">Sign Up</button>
+</form>
