@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  web:
+    image: mcr.microsoft.com/dotnet/sdk:9.0
+    container_name: dotnet-web
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "5000:5000"  # Exposing port 5000 for local access
+    volumes:
+      - .:/app  # Mount the current directory to /app in the container
+    environment:
+      - ASPNETCORE_URLS=http://+:5000  # Ensures app listens on all network interfaces
+    networks:
+      - webapp-network
+    working_dir: /app  # Ensure the working directory is correct
+
+networks:
+  webapp-network:
+    driver: bridge
