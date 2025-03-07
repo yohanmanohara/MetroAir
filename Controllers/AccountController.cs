@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace MetroAir.Controllers
 {
+    [Route("[controller]/[action]")]
     public class AccountController : Controller
     {
         private readonly AppDbContext _context;
