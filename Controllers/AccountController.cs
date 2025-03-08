@@ -1,103 +1,178 @@
+﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using System.Threading.Tasks;
-using MetroAir.Models; // Namespace for User model
-using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.Http;
-using BCrypt.Net;
+using UserRoles.Models;
+using UserRoles.ViewModels;
 
-namespace MetroAir.Controllers
+namespace UserRoles.Controllers
 {
-    [Route("[controller]/[action]")]
     public class AccountController : Controller
     {
-        private readonly AppDbContext _context;
+        private readonly SignInManager<Users> signInManager;
+        private readonly UserManager<Users> userManager;
+        private readonly RoleManager<IdentityRole> roleManager;
 
-        public AccountController(AppDbContext context)
+        public AccountController(SignInManager<Users> signInManager, UserManager<Users> userManager, RoleManager<IdentityRole> roleManager)
         {
-            _context = context;
+            this.signInManager = signInManager;
+            this.userManager = userManager;
+            this.roleManager = roleManager;
         }
 
-        // GET: /Account/Signup
-        [HttpGet]
-        public IActionResult Signup()
-        {
-            return View();
-        }
-
-        // POST: /Account/Signup
-        // POST: /Account/Signup
-[HttpPost]
-public async Task<IActionResult> SignUp(User user)
-{
-    // Mark that the form was submitted
-    TempData["FormSubmitted"] = true;
-
-    var existingUser = await _context.Users
-        .FirstOrDefaultAsync(u => u.Email == user.Email);
-
-    if (existingUser != null)
-    {
-        TempData["Error"] = "Email is already in use.";
-        return View(user); 
-    }
-
-    user.PasswordHash = HashPassword(user.PasswordHash);
-
-    try
-    {
-        _context.Users.Add(user);
-        await _context.SaveChangesAsync();
-
-        TempData["Success"] = "Sign-up successful! Please log in.";
-        
-       return View(user); 
-
-    }
-    catch (Exception)
-    {
-        TempData["Error"] = "An error occurred while signing up. Please try again.";
-        return View(user);
-    }
-}
-
-        // Hash password method using BCrypt
-        private string HashPassword(string password)
-        {
-            return BCrypt.Net.BCrypt.HashPassword(password);
-        }
-
-        // GET: /Account/Login
         [HttpGet]
         public IActionResult Login()
         {
             return View();
         }
 
-        // POST: /Account/Login
         [HttpPost]
-        public async Task<IActionResult> Login(string email, string password)
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Login(LoginViewModel model)
         {
-            var user = await _context.Users.SingleOrDefaultAsync(u => u.Email == email);
-
-            if (user == null || !BCrypt.Net.BCrypt.Verify(password, user.PasswordHash))
+            if (!ModelState.IsValid)
             {
-                ModelState.AddModelError(string.Empty, "Invalid login attempt.");
-                return View(); // Return to login page with error message
+                return View(model);
             }
 
-            // Store user session
-            HttpContext.Session.SetString("UserId", user.Id.ToString());
-            HttpContext.Session.SetString("Username", user.Username);
+            var result = await signInManager.PasswordSignInAsync(model.Email, model.Password, model.RememberMe, lockoutOnFailure: false);
 
-            return RedirectToAction("Dashboard", "Home");
+            if (result.Succeeded)
+            {
+                return RedirectToAction("Index", "Home");
+            }
+
+            ModelState.AddModelError(string.Empty, "Invalid Login Attempt.");
+            return View(model);
         }
 
-        // GET: /Account/Logout
         [HttpGet]
-        public IActionResult Logout()
+        public IActionResult Register()
         {
-            HttpContext.Session.Clear(); // Clear session data
-            return RedirectToAction("Login");
+            return View();
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Register(RegisterViewModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                return View(model);
+            }
+
+            var user = new Users
+            {
+                FullName = model.Name,
+                UserName = model.Email,
+                NormalizedUserName = model.Email.ToUpper(),
+                Email = model.Email,
+                NormalizedEmail = model.Email.ToUpper()
+            };
+
+            var result = await userManager.CreateAsync(user, model.Password);
+
+            if (result.Succeeded)
+            {
+                var roleExist = await roleManager.RoleExistsAsync("User");
+
+                if (!roleExist)
+                {
+                    var role = new IdentityRole("User");
+                    await roleManager.CreateAsync(role);
+                }
+
+                await userManager.AddToRoleAsync(user, "User");
+
+                await signInManager.SignInAsync(user, isPersistent: false);
+                return RedirectToAction("Login", "Account");
+            }
+
+            foreach (var error in result.Errors)
+            {
+                ModelState.AddModelError(string.Empty, error.Description);
+            }
+
+            return View(model);
+        }
+
+        [HttpGet]
+        public IActionResult VerifyEmail()
+        {
+            return View();
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> VerifyEmail(VerifyEmailViewModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                return View(model);
+            }
+
+            var user = await userManager.FindByNameAsync(model.Email);
+
+            if (user == null)
+            {
+                ModelState.AddModelError("", "User not found!");
+                return View(model);
+            }
+            else
+            {
+                return RedirectToAction("ChangePassword", "Account", new { username = user.UserName });
+            }
+        }
+
+        [HttpGet]
+        public IActionResult ChangePassword(string username)
+        {
+            if (string.IsNullOrEmpty(username))
+            {
+                return RedirectToAction("VerifyEmail", "Account");
+            }
+
+            return View(new ChangePasswordViewModel { Email = username });
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> ChangePassword(ChangePasswordViewModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                ModelState.AddModelError("", "Something went wrong");
+                return View(model);
+            }
+
+            var user = await userManager.FindByNameAsync(model.Email);
+
+            if(user == null)
+            {
+                ModelState.AddModelError("", "User not found!");
+                return View(model);
+            }
+
+            var result = await userManager.RemovePasswordAsync(user);
+            if (result.Succeeded)
+            {
+                result = await userManager.AddPasswordAsync(user, model.NewPassword);
+                return RedirectToAction("Login", "Account");
+            }
+            else
+            {
+                foreach(var error in result.Errors)
+                {
+                    ModelState.AddModelError("", error.Description);
+                }
+
+                return View(model);
+            }
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Logout()
+        {
+            await signInManager.SignOutAsync();
+            return RedirectToAction("Index", "Home");
         }
     }
 }

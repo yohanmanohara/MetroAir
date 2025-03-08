@@ -1,16 +1,13 @@
+﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using UserRoles.Models;
 
-namespace MetroAir.Models
+namespace UserRoles.Data
 {
-    public class AppDbContext : DbContext
+    public class AppDbContext : IdentityDbContext<Users>
     {
-        public DbSet<User> Users { get; set; }
-
-        public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
-
-        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        public AppDbContext(DbContextOptions options) : base(options)
         {
-            base.OnModelCreating(modelBuilder);
         }
     }
 }
