@@ -16,23 +16,23 @@ namespace UserRoles.Services
 
             try
             {
-                // Ensure the database is ready
                 logger.LogInformation("Ensuring the database is created.");
                 await context.Database.EnsureCreatedAsync();
 
                 // Add roles
                 logger.LogInformation("Seeding roles.");
-                await AddRoleAsync(roleManager, "Admin");
-                await AddRoleAsync(roleManager, "User");
+                await AddRoleAsync(roleManager, "WebMaster");
+                await AddRoleAsync(roleManager, "DataProvider");
+                await AddRoleAsync(roleManager, "MonitoringAdmin");
 
                 // Add admin user
                 logger.LogInformation("Seeding admin user.");
-                var adminEmail = "admin@codehub.com";
+                var adminEmail = "admin@gmail.com";
                 if (await userManager.FindByEmailAsync(adminEmail) == null)
                 {
                     var adminUser = new Users
                     {
-                        FullName = "Code Hub",
+                        FullName = "MetroAir-Admin",
                         UserName = adminEmail,
                         NormalizedUserName = adminEmail.ToUpper(),
                         Email = adminEmail,
@@ -44,8 +44,8 @@ namespace UserRoles.Services
                     var result = await userManager.CreateAsync(adminUser, "Admin@123");
                     if (result.Succeeded)
                     {
-                        logger.LogInformation("Assigning Admin role to the admin user.");
-                        await userManager.AddToRoleAsync(adminUser, "Admin");
+                        logger.LogInformation("Assigning WebMaster role to the WebMaster user.");
+                        await userManager.AddToRoleAsync(adminUser, "WebMaster");
                     }
                     else
                     {
