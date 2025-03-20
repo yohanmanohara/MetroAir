@@ -44,55 +44,7 @@ namespace UserRoles.Controllers
             return View(model);
         }
 
-        [HttpGet]
-        public IActionResult Register()
-        {
-            return View();
-        }
-
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Register(RegisterViewModel model)
-        {
-            if (!ModelState.IsValid)
-            {
-                return View(model);
-            }
-
-            var user = new Users
-            {
-                FullName = model.Name,
-                UserName = model.Email,
-                NormalizedUserName = model.Email.ToUpper(),
-                Email = model.Email,
-                NormalizedEmail = model.Email.ToUpper()
-            };
-
-            var result = await userManager.CreateAsync(user, model.Password);
-
-            if (result.Succeeded)
-            {
-                var roleExist = await roleManager.RoleExistsAsync("User");
-
-                if (!roleExist)
-                {
-                    var role = new IdentityRole("User");
-                    await roleManager.CreateAsync(role);
-                }
-
-                await userManager.AddToRoleAsync(user, "User");
-
-                await signInManager.SignInAsync(user, isPersistent: false);
-                return RedirectToAction("Login", "Account");
-            }
-
-            foreach (var error in result.Errors)
-            {
-                ModelState.AddModelError(string.Empty, error.Description);
-            }
-
-            return View(model);
-        }
+       
 
         [HttpGet]
         public IActionResult VerifyEmail()
