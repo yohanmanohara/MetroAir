@@ -13,51 +13,62 @@ namespace UserRoles.Services
             var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
             var userManager = scope.ServiceProvider.GetRequiredService<UserManager<Users>>();
             var logger = scope.ServiceProvider.GetRequiredService<ILogger<SeedService>>();
-
             try
             {
                 logger.LogInformation("Ensuring the database is created.");
                 await context.Database.EnsureCreatedAsync();
 
+                // Define roles, users, and passwords
+                var roles = new Dictionary<string, (string Email, string Password)>
+    {
+        { "WebMaster", ("admin@gmail.com", "Admin@123") },
+        { "DataProvider", ("dataprovider@gmail.com", "DataProvider@123") },
+        { "MonitoringAdmin", ("monitoringadmin@gmail.com", "MonitoringAdmin@123") }
+    };
+
                 // Add roles
                 logger.LogInformation("Seeding roles.");
-                await AddRoleAsync(roleManager, "WebMaster");
-                await AddRoleAsync(roleManager, "DataProvider");
-                await AddRoleAsync(roleManager, "MonitoringAdmin");
-
-                // Add admin user
-                logger.LogInformation("Seeding admin user.");
-                var adminEmail = "admin@gmail.com";
-                if (await userManager.FindByEmailAsync(adminEmail) == null)
+                foreach (var role in roles.Keys)
                 {
-                    var adminUser = new Users
-                    {
-                        FullName = "MetroAir-Admin",
-                        UserName = adminEmail,
-                        NormalizedUserName = adminEmail.ToUpper(),
-                        Email = adminEmail,
-                        NormalizedEmail = adminEmail.ToUpper(),
-                        EmailConfirmed = true,
-                        SecurityStamp = Guid.NewGuid().ToString()
-                    };
+                    await AddRoleAsync(roleManager, role);
+                }
 
-                    var result = await userManager.CreateAsync(adminUser, "Admin@123");
-                    if (result.Succeeded)
+                // Add users and assign roles
+                foreach (var (role, (email, password)) in roles)
+                {
+                    logger.LogInformation($"Seeding user for role {role}.");
+
+                    if (await userManager.FindByEmailAsync(email) == null)
                     {
-                        logger.LogInformation("Assigning WebMaster role to the WebMaster user.");
-                        await userManager.AddToRoleAsync(adminUser, "WebMaster");
-                    }
-                    else
-                    {
-                        logger.LogError("Failed to create admin user: {Errors}", string.Join(", ", result.Errors.Select(e => e.Description)));
+                        var user = new Users
+                        {
+                            FullName = $"MetroAir-{role}",
+                            UserName = email,
+                            NormalizedUserName = email.ToUpper(),
+                            Email = email,
+                            NormalizedEmail = email.ToUpper(),
+                            EmailConfirmed = true,
+                            SecurityStamp = Guid.NewGuid().ToString()
+                        };
+
+                        var result = await userManager.CreateAsync(user, password);
+                        if (result.Succeeded)
+                        {
+                            logger.LogInformation($"Assigning {role} role to {email}.");
+                            await userManager.AddToRoleAsync(user, role);
+                        }
+                        else
+                        {
+                            logger.LogError("Failed to create user {Email}: {Errors}", email, string.Join(", ", result.Errors.Select(e => e.Description)));
+                        }
                     }
                 }
             }
             catch (Exception ex)
             {
                 logger.LogError(ex, "An error occurred while seeding the database.");
-
             }
+
 
         }
 
