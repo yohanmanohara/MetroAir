@@ -18,22 +18,34 @@ namespace UserRoles.Controllers
         {
             return View();
         }
+        [Authorize(Roles = "WebMaster")]
+        public IActionResult SystemConfiguration()
+        {
+            return View("~/Views/Home/WebMaster/SystemConfiguration.cshtml");
+        }
+
 
        
         [Authorize(Roles = "WebMaster")]
-        public IActionResult WebMaster()
+        public IActionResult Basicsecuritysetup()
         {
-            return View();
+            return View("~/Views/Home/WebMaster/Basicsecuritysetup.cshtml");
+        }
+
+        [Authorize(Roles = "WebMaster")]
+        public IActionResult UserManagement()
+        {
+            return View("~/Views/Home/WebMaster/UserManagement.cshtml");
         }
         [Authorize(Roles = "DataProvider")]
         public IActionResult DataProvider()
         {
-            return View();
+            return View("~/Views/Home/WebMaster/DataProvider.cshtml"); ;
         }
         [Authorize(Roles = "MonitoringAdmin")]
         public IActionResult MonitoringAdmin()
         {
-            return View();
+            return View("~/Views/Home/WebMaster/MonitoringAdmin.cshtml");
         }
 
         //[Authorize(Roles = "User")]

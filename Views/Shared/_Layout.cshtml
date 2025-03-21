@@ -28,7 +28,7 @@
                 @if (User.IsInRole("WebMaster"))
                 {
                     <li class="nav-item">
-                                <a class="nav-link text-dark fw-semibold" asp-controller="Home" asp-action="WebMaster">WebMaster</a>
+                                <a class="nav-link text-dark fw-semibold" asp-controller="Home" asp-action="UserManagement">WebMaster</a>
                     </li>
                 }
                 @if (User.IsInRole("DataProvider"))
