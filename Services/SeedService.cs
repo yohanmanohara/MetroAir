@@ -76,7 +76,7 @@ namespace UserRoles.Services
         {
             if (!await roleManager.RoleExistsAsync(roleName))
             {
-                var result = await roleManager.CreateAsync(new IdentityRole(roleName));
+                var result = await roleManager.CreateAsync(new IdentityRole(roleName)   );
                 if (!result.Succeeded)
                 {
                     throw new Exception($"Failed to create role '{roleName}': {string.Join(", ", result.Errors.Select(e => e.Description))}");
