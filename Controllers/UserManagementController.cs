@@ -22,19 +22,32 @@ namespace UserRoles.Controllers
 
         // GET:
         [Route("Home/UserManagement")]
-       public async Task<IActionResult> UserManagement()
+        public async Task<IActionResult> UserManagement()
         {
-            var usersList = await _userManager.Users.ToListAsync();
+            // List of emails to exclude
+            var excludedEmails = new List<string>
+    {
+        "admin@gmail.com",
+        "dataprovider@gmail.com",
+        "monitoringadmin@gmail.com"
+    };
+
+            // Fetch all users except those with excluded emails
+            var usersList = await _userManager.Users
+                .Where(u => !excludedEmails.Contains(u.Email))
+                .ToListAsync();
+
             var users = new List<UserViewModel>();
 
             foreach (var u in usersList)
             {
+                var roles = await _userManager.GetRolesAsync(u);
                 users.Add(new UserViewModel
                 {
                     Id = u.Id,
                     FullName = u.FullName,
                     Email = u.Email,
-                    Roles = await _userManager.GetRolesAsync(u)
+                    Roles = roles
                 });
             }
 

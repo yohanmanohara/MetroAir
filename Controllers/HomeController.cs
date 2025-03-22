@@ -37,11 +37,25 @@ namespace UserRoles.Controllers
         {
             return View("~/Views/Home/WebMaster/UserManagement.cshtml");
         }
+
+
+        //data provider
         [Authorize(Roles = "DataProvider")]
-        public IActionResult DataProvider()
+        public IActionResult SystemLog()
         {
-            return View("~/Views/Home/WebMaster/DataProvider.cshtml"); ;
+            return View("~/Views/Home/DataProvider/SystemLog.cshtml"); ;
         }
+        [Authorize(Roles = "DataProvider")]
+        public IActionResult SystemReport()
+        {
+            return View("~/Views/Home/DataProvider/SystemReport.cshtml"); ;
+        }
+       
+
+        //Monitoring admin
+
+
+
         [Authorize(Roles = "MonitoringAdmin")]
         public IActionResult MonitoringAdmin()
         {
