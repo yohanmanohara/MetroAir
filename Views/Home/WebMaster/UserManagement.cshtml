@@ -8,6 +8,20 @@
 <div class="container mt-4">
     <h2>User Management</h2>
 
+    <!-- Display Success/Failure Messages -->
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success">
+            @TempData["Success"]
+        </div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger">
+            @TempData["Error"]
+        </div>
+    }
+
     <!-- Add User Button -->
     <button type="button" class="btn btn-primary mb-3" data-bs-toggle="modal" data-bs-target="#addUserModal">
         Add User
@@ -31,13 +45,21 @@
                         <td>@user.FullName</td>
                         <td>@user.Email</td>
                         <td>@string.Join(", ", user.Roles)</td>
-                        <td>
+                        <td class="d-flex flex-row gap-2">
+                            <!-- Edit Role Form -->
+                            <button type="button" class="btn btn-warning btn-sm"
+                                    data-bs-toggle="modal" data-bs-target="#editUserModal"
+                                    data-email="@user.Email" data-role="@user.Roles.FirstOrDefault()">
+                                Edit
+                            </button>
+
                             <!-- Delete Button -->
                             <form asp-action="Delete" asp-route-id="@user.Id" method="post" onsubmit="return confirm('Are you sure you want to delete this user?');">
                                 @Html.AntiForgeryToken()
                                 <button type="submit" class="btn btn-danger btn-sm">Delete</button>
                             </form>
                         </td>
+
                     </tr>
                 }
             }
@@ -102,8 +124,41 @@
         </div>
     </div>
 </div>
+<div class="modal fade" id="editUserModal" tabindex="-1" aria-labelledby="editUserModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editUserModalLabel">Edit User Role</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editUserForm" asp-action="EditRole" method="post">
+                    @Html.AntiForgeryToken()
+
+                    <input type="hidden" id="EditUserEmail" name="email">
+
+                    <div class="mb-3">
+                        <label for="EditRole" class="form-label">Select Role</label>
+                        <select class="form-control" id="EditRole" name="role" required>
+                            <option value="">-- Select Role --</option>
+                            <option value="DataProvider">DataProvider</option>
+                            <option value="MonitoringAdmin">MonitoringAdmin</option>
+                        </select>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-primary">Update Role</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
 
 <script>
+    // Password validation
     function validatePasswords() {
         var password = document.getElementById("Password").value;
         var confirmPassword = document.getElementById("ConfirmPassword").value;
@@ -117,4 +172,17 @@
             return true; // Allow form submission
         }
     }
+
+     document.addEventListener("DOMContentLoaded", function () {
+        var editUserModal = document.getElementById("editUserModal");
+
+        editUserModal.addEventListener("show.bs.modal", function (event) {
+            var button = event.relatedTarget;
+            var email = button.getAttribute("data-email");
+            var role = button.getAttribute("data-role");
+
+            document.getElementById("EditUserEmail").value = email;
+            document.getElementById("EditRole").value = role;
+        });
+    });
 </script>

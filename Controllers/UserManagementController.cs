@@ -68,6 +68,44 @@ namespace UserRoles.Controllers
 
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EditRole(string email, string role)
+        {
+            if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(role))
+            {
+                TempData["Error"] = "Invalid data.";
+                return RedirectToAction("UserManagement");
+            }
+
+            var user = await _userManager.FindByEmailAsync(email);
+            if (user == null)
+            {
+                TempData["Error"] = "User not found.";
+                return RedirectToAction("UserManagement");
+            }
+
+            var currentRoles = await _userManager.GetRolesAsync(user);
+            var removeResult = await _userManager.RemoveFromRolesAsync(user, currentRoles);
+            if (!removeResult.Succeeded)
+            {
+                TempData["Error"] = "Failed to remove existing roles.";
+                return RedirectToAction("UserManagement");
+            }
+
+            var addRoleResult = await _userManager.AddToRoleAsync(user, role);
+            if (!addRoleResult.Succeeded)
+            {
+                TempData["Error"] = "Failed to assign the new role.";
+                return RedirectToAction("UserManagement");
+            }
+
+            TempData["Success"] = "User role updated successfully!";
+            return RedirectToAction("UserManagement");
+        }
+
+
+
+        [HttpPost]
         public async Task<IActionResult> AddUser(string FullName, string Email, string Role, string Password, string ConfirmPassword)
         {
             // Check if all required fields are filled

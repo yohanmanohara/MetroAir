@@ -13,57 +13,57 @@ namespace UserRoles.Services
             var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
             var userManager = scope.ServiceProvider.GetRequiredService<UserManager<Users>>();
             var logger = scope.ServiceProvider.GetRequiredService<ILogger<SeedService>>();
+
             try
             {
                 logger.LogInformation("Ensuring the database is created.");
                 await context.Database.EnsureCreatedAsync();
 
-                // Define roles, users, and passwords
-                var roles = new Dictionary<string, (string Email, string Password)>
+                // Define roles
+                var roles = new List<string>
                 {
-                    { "WebMaster", ("admin@gmail.com", "Admin@123") }  // Single record for WebMaster role
+                    "WebMaster",  
+                    "DataProvider",       
+                    "MonitoringAdmin",
                 };
 
                 // Add roles
                 logger.LogInformation("Seeding roles.");
-                foreach (var role in roles.Keys)
+                foreach (var role in roles)
                 {
                     await AddRoleAsync(roleManager, role);
                 }
 
-                // Add users and assign roles
-                foreach (var (role, (email, password)) in roles)
+                
+                var webMasterEmail = "admin@gmail.com";
+                var password = "Admin@123";
+                if (await userManager.FindByEmailAsync(webMasterEmail) == null)
                 {
-                    logger.LogInformation($"Seeding user for role {role}.");
-
-                    if (await userManager.FindByEmailAsync(email) == null)
+                    var user = new Users
                     {
-                        var user = new Users
-                        {
-                            FullName = $"MetroAir-{role}",
-                            UserName = email,
-                            NormalizedUserName = email.ToUpper(),
-                            Email = email,
-                            NormalizedEmail = email.ToUpper(),
-                            EmailConfirmed = true,
-                            SecurityStamp = Guid.NewGuid().ToString()
-                        };
+                        FullName = "MetroAir-WebMaster",
+                        UserName = webMasterEmail,
+                        NormalizedUserName = webMasterEmail.ToUpper(),
+                        Email = webMasterEmail,
+                        NormalizedEmail = webMasterEmail.ToUpper(),
+                        EmailConfirmed = true,
+                        SecurityStamp = Guid.NewGuid().ToString()
+                    };
 
-                        var result = await userManager.CreateAsync(user, password);
-                        if (result.Succeeded)
-                        {
-                            logger.LogInformation($"Assigning {role} role to {email}.");
-                            await userManager.AddToRoleAsync(user, role);
-                        }
-                        else
-                        {
-                            logger.LogError("Failed to create user {Email}: {Errors}", email, string.Join(", ", result.Errors.Select(e => e.Description)));
-                        }
+                    var result = await userManager.CreateAsync(user, password);
+                    if (result.Succeeded)
+                    {
+                        logger.LogInformation($"Assigning WebMaster role to {webMasterEmail}.");
+                        await userManager.AddToRoleAsync(user, "WebMaster");
                     }
                     else
                     {
-                        logger.LogInformation($"User {email} already exists.");
+                        logger.LogError("Failed to create WebMaster user {Email}: {Errors}", webMasterEmail, string.Join(", ", result.Errors.Select(e => e.Description)));
                     }
+                }
+                else
+                {
+                    logger.LogInformation($"User {webMasterEmail} already exists.");
                 }
             }
             catch (Exception ex)
@@ -83,5 +83,6 @@ namespace UserRoles.Services
                 }
             }
         }
+
     }
 }
