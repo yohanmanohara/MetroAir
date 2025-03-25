@@ -1,13 +1,17 @@
 ﻿@model IEnumerable<UserRoles.ViewModels.UserViewModel>
 
-
 @{
     ViewBag.Title = "User Management";
     Layout = "~/Views/Shared/_WebMasterLayout.cshtml";
 }
 
-<div>
+<div class="container mt-4">
     <h2>User Management</h2>
+
+    <!-- Add User Button -->
+    <button type="button" class="btn btn-primary mb-3" data-bs-toggle="modal" data-bs-target="#addUserModal">
+        Add User
+    </button>
 
     <table class="table table-bordered table-striped">
         <thead>
@@ -22,7 +26,6 @@
             @if (Model != null && Model.Any())
             {
                 foreach (var user in Model)
-
                 {
                     <tr>
                         <td>@user.FullName</td>
@@ -47,3 +50,71 @@
         </tbody>
     </table>
 </div>
+
+<!-- Bootstrap Modal for Adding User -->
+<div class="modal fade" id="addUserModal" tabindex="-1" aria-labelledby="addUserModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addUserModalLabel">Add User</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addUserForm" asp-action="AddUser" method="post" onsubmit="return validatePasswords()">
+                    @Html.AntiForgeryToken()
+
+                    <div class="mb-3">
+                        <label for="FullName" class="form-label">Full Name</label>
+                        <input type="text" class="form-control" id="FullName" name="FullName" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="Email" class="form-label">Email</label>
+                        <input type="email" class="form-control" id="Email" name="Email" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="Password" class="form-label">Password</label>
+                        <input type="password" class="form-control" id="Password" name="Password" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="ConfirmPassword" class="form-label">Confirm Password</label>
+                        <input type="password" class="form-control" id="ConfirmPassword" name="ConfirmPassword" required>
+                        <small id="passwordError" class="text-danger d-none">Passwords do not match!</small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="Role" class="form-label">Select Role</label>
+                        <select class="form-control" id="Role" name="Role" required>
+                            <option value="">-- Select Role --</option>
+                            <option value="DataProvider">DataProvider</option>
+                            <option value="MonitoringAdmin">MonitoringAdmin</option>
+                        </select>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-primary">Add User</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function validatePasswords() {
+        var password = document.getElementById("Password").value;
+        var confirmPassword = document.getElementById("ConfirmPassword").value;
+        var errorElement = document.getElementById("passwordError");
+
+        if (password !== confirmPassword) {
+            errorElement.classList.remove("d-none");
+            return false; // Prevent form submission
+        } else {
+            errorElement.classList.add("d-none");
+            return true; // Allow form submission
+        }
+    }
+</script>

@@ -24,18 +24,7 @@ namespace UserRoles.Controllers
         [Route("Home/UserManagement")]
         public async Task<IActionResult> UserManagement()
         {
-            // List of emails to exclude
-            var excludedEmails = new List<string>
-    {
-        "admin@gmail.com",
-        "dataprovider@gmail.com",
-        "monitoringadmin@gmail.com"
-    };
-
-            // Fetch all users except those with excluded emails
-            var usersList = await _userManager.Users
-                .Where(u => !excludedEmails.Contains(u.Email))
-                .ToListAsync();
+            var usersList = await _userManager.Users.ToListAsync(); // Fetch all users
 
             var users = new List<UserViewModel>();
 
@@ -53,6 +42,7 @@ namespace UserRoles.Controllers
 
             return View("~/Views/Home/WebMaster/UserManagement.cshtml", users);
         }
+
 
 
         // POST: UserManagement/Delete/5
@@ -75,5 +65,49 @@ namespace UserRoles.Controllers
 
             return RedirectToAction(nameof(Index));
         }
+
+
+        [HttpPost]
+        public async Task<IActionResult> AddUser(string FullName, string Email, string Role, string Password, string ConfirmPassword)
+        {
+            // Check if all required fields are filled
+            if (string.IsNullOrWhiteSpace(FullName) || string.IsNullOrWhiteSpace(Email) || string.IsNullOrWhiteSpace(Role) || string.IsNullOrWhiteSpace(Password))
+            {
+                TempData["Error"] = "All fields are required!";
+                return RedirectToAction("UserManagement");
+            }
+
+            // Check if password and confirm password match
+            if (Password != ConfirmPassword)
+            {
+                TempData["Error"] = "Passwords do not match!";
+                return RedirectToAction("UserManagement");
+            }
+
+            // Create a new user
+            var user = new Users
+            {
+                FullName = FullName,
+                Email = Email,
+                UserName = Email
+            };
+
+          
+            var result = await _userManager.CreateAsync(user, Password);
+
+            if (result.Succeeded)
+            {
+                // Assign the user to the selected role
+                await _userManager.AddToRoleAsync(user, Role);
+                TempData["Success"] = "User added successfully!";
+            }
+            else
+            {
+                TempData["Error"] = "User creation failed! " + string.Join(", ", result.Errors.Select(e => e.Description));
+            }
+
+            return RedirectToAction("UserManagement");
+        }
+
     }
-}
+    }

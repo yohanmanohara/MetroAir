@@ -20,11 +20,9 @@ namespace UserRoles.Services
 
                 // Define roles, users, and passwords
                 var roles = new Dictionary<string, (string Email, string Password)>
-    {
-        { "WebMaster", ("admin@gmail.com", "Admin@123") },
-        { "DataProvider", ("dataprovider@gmail.com", "DataProvider@123") },
-        { "MonitoringAdmin", ("monitoringadmin@gmail.com", "MonitoringAdmin@123") }
-    };
+                {
+                    { "WebMaster", ("admin@gmail.com", "Admin@123") }  // Single record for WebMaster role
+                };
 
                 // Add roles
                 logger.LogInformation("Seeding roles.");
@@ -62,21 +60,23 @@ namespace UserRoles.Services
                             logger.LogError("Failed to create user {Email}: {Errors}", email, string.Join(", ", result.Errors.Select(e => e.Description)));
                         }
                     }
+                    else
+                    {
+                        logger.LogInformation($"User {email} already exists.");
+                    }
                 }
             }
             catch (Exception ex)
             {
                 logger.LogError(ex, "An error occurred while seeding the database.");
             }
-
-
         }
 
         private static async Task AddRoleAsync(RoleManager<IdentityRole> roleManager, string roleName)
         {
             if (!await roleManager.RoleExistsAsync(roleName))
             {
-                var result = await roleManager.CreateAsync(new IdentityRole(roleName)   );
+                var result = await roleManager.CreateAsync(new IdentityRole(roleName));
                 if (!result.Succeeded)
                 {
                     throw new Exception($"Failed to create role '{roleName}': {string.Join(", ", result.Errors.Select(e => e.Description))}");
