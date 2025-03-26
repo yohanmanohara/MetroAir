@@ -1,10 +1,11 @@
-﻿@{
-    ViewBag.Title = "User Management";
+﻿@model List<MetroAir.Models.Sensor>
+@{
+    ViewBag.Title = "Sensor Management";
     Layout = "~/Views/Shared/_MonitoringAdminLayout.cshtml";
 }
 
 <div class="container mt-4">
-    <h2 class="mb-4 text-primary"> Sensor Management</h2>
+    <h2 class="mb-4 text-primary">Sensor Management</h2>
 
     <!-- Add Sensor Form -->
     <div class="card mb-4">
@@ -12,36 +13,33 @@
             <h5 class="mb-0">Add New Sensor</h5>
         </div>
         <div class="card-body">
-            <form method="post" action="@Url.Action("AddSensor", "Sensor")">
+            <form method="post" asp-controller="Sensor" asp-action="AddSensor">
                 <div class="row">
                     <div class="col-md-4">
                         <label class="form-label">Sensor Location Name</label>
-                        <input type="text" name="sensorLocationName" class="form-control" required>
+                        <input type="text" name="LocationName" class="form-control" required>
                     </div>
                     <div class="col-md-4">
                         <label class="form-label">Sensor Type</label>
-                        <input type="text" name="sensorType" class="form-control" value="AirQuality" required>
+                        <input type="text" name="Type" class="form-control" value="AirQuality" required>
                     </div>
+                    <!-- Removed X Coordinate -->
                     <div class="col-md-4">
-                        <label class="form-label">X Coordinate</label>
-                        <input type="number" name="xCoordinate" class="form-control" step="0.0001" required>
+                        <label class="form-label">Station ID</label>
+                        <input type="number" name="StationId" class="form-control" required>
                     </div>
                 </div>
                 <div class="row mt-3">
                     <div class="col-md-4">
-                        <label class="form-label">Y Coordinate</label>
-                        <input type="number" name="yCoordinate" class="form-control" step="0.0001" required>
-                    </div>
-                    <div class="col-md-4">
                         <label class="form-label">Status</label>
-                        <select name="status" class="form-select">
+                        <select name="Status" class="form-select">
                             <option value="Active">Active</option>
                             <option value="Inactive">Inactive</option>
                         </select>
                     </div>
                     <div class="col-md-4">
                         <label class="form-label">Created Date</label>
-                        <input type="date" name="createdDate" class="form-control" value="@DateTime.Now.ToString("yyyy-MM-dd")" readonly required>
+                        <input type="date" name="CreatedDate" class="form-control" value="@DateTime.Now.ToString("yyyy-MM-dd")" readonly required>
                     </div>
                 </div>
                 <div class="row mt-3">
@@ -53,12 +51,11 @@
         </div>
     </div>
 
-    <!-- Display Sensors -->
     <h3 class="mb-3">Added Sensors</h3>
     <div class="row">
-        @if (ViewBag.Sensors != null && ViewBag.Sensors.Count > 0)
+        @if (Model != null && Model.Count > 0)
         {
-            @foreach (var sensor in ViewBag.Sensors)
+            @foreach (var sensor in Model)
             {
                 <div class="col-md-4">
                     <div class="card mb-3">
@@ -67,9 +64,16 @@
                         </div>
                         <div class="card-body">
                             <p><strong>Type:</strong> @sensor.Type</p>
-                            <p><strong>Coordinates:</strong> (X: @sensor.XCoordinate, Y: @sensor.YCoordinate)</p>
+                            <p><strong>Station ID:</strong> @sensor.StationId</p> <!-- Changed from coordinates to Station ID -->
                             <p><strong>Status:</strong> <span class="badge bg-@(sensor.Status == "Active" ? "success" : "danger")">@sensor.Status</span></p>
                             <p><strong>Created Date:</strong> @sensor.CreatedDate.ToShortDateString()</p>
+                            <p><strong>AQI:</strong> @sensor.AQI</p>
+                            <p><strong>Air Quality Status:</strong> <span class="badge bg-@(sensor.AirQualityStatus == "Good" ? "success" : sensor.AirQualityStatus == "Moderate" ? "warning" : "danger")">@sensor.AirQualityStatus</span></p>
+
+                            <!-- Delete Button -->
+                            <form method="post" asp-controller="Sensor" asp-action="DeleteSensor" asp-route-id="@sensor.Id" onsubmit="return confirm('Are you sure you want to delete this sensor?');">
+                                <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                            </form>
                         </div>
                     </div>
                 </div>

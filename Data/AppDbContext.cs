@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using UserRoles.Models;
+using MetroAir.Models;
 
 namespace UserRoles.Data
 {
@@ -9,5 +10,7 @@ namespace UserRoles.Data
         public AppDbContext(DbContextOptions options) : base(options)
         {
         }
-    }
+        public DbSet<Sensor> Sensors { get; set; }
+    
+}
 }

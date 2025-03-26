@@ -3,70 +3,162 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
-using System.Web.Mvc;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Linq;
+using MetroAir.Models;
+using MetroAir.ViewModels;
+using UserRoles.Models;
+using Microsoft.EntityFrameworkCore;
+using UserRoles.Data;
 
-public class SensorController : Controller
+namespace MetroAir.Controllers
 {
-    private static readonly string API_KEY = "afd0a6ef4a6ae0b9fd8a41474b30a4910fbe3b3e"; 
-    public async Task<ActionResult> Index()
+    public class SensorController : Controller
     {
-        ViewBag.Sensors = await GetSensorsWithAQI();
-        return View();
-    }
+        private static readonly string API_KEY = "afd0a6ef4a6ae0b9fd8a41474b30a4910fbe3b3e"; // Replace with your API Key
+        private readonly ILogger<SensorController> _logger;
+        private readonly AppDbContext _context;  // Injected DbContext to access database
 
-    public async Task<List<Sensor>> GetSensorsWithAQI()
-    {
-        var sensors = new List<Sensor>
+        // Constructor to inject dependencies
+        public SensorController(ILogger<SensorController> logger, AppDbContext context)
         {
-            new Sensor { LocationName = "Central Park", XCoordinate = 40.785091, YCoordinate = -73.968285, Status = "Active", CreatedDate = DateTime.Now },
-            new Sensor { LocationName = "Times Square", XCoordinate = 40.758896, YCoordinate = -73.985130, Status = "Active", CreatedDate = DateTime.Now }
-        };
-
-        foreach (var sensor in sensors)
-        {
-            var airQualityData = await GetAQIData(sensor.XCoordinate, sensor.YCoordinate);
-            if (airQualityData != null)
-            {
-                sensor.AQI = airQualityData.Item1;
-                sensor.AirQualityStatus = airQualityData.Item2;
-            }
+            _logger = logger;
+            _context = context;
         }
 
-        return sensors;
-    }
-
-    private async Task<Tuple<int, string>> GetAQIData(double lat, double lon)
-    {
-        using (HttpClient client = new HttpClient())
+        // Delete Sensor
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteSensor(int id)
         {
-            string url = $"https://api.waqi.info/feed/geo:{lat};{lon}/?token={API_KEY}";
-
-            HttpResponseMessage response = await client.GetAsync(url);
-            if (response.IsSuccessStatusCode)
+            var sensor = await _context.Sensors.FindAsync(id);
+            if (sensor == null)
             {
-                string json = await response.Content.ReadAsStringAsync();
-                JObject data = JObject.Parse(json);
+                return NotFound();
+            }
 
-                if (data["status"].ToString() == "ok")
+            _context.Sensors.Remove(sensor);
+            await _context.SaveChangesAsync();
+
+            // Redirect back to the SensorManagement view after deletion
+            return RedirectToAction(nameof(SensorManagement));
+        }
+
+
+
+
+        // Route for Sensor Management
+        [Route("Home/SensorManagement")]
+        public async Task<IActionResult> SensorManagement()
+        {
+            
+            var sensors = await _context.Sensors.ToListAsync();
+
+           
+            _logger.LogInformation($"Total sensors fetched: {sensors.Count}");
+
+            
+            foreach (var sensor in sensors)
+            {
+                // Assuming each sensor has a unique StationId
+                var result = await GetAQIData(sensor.StationId);
+                int aqi = result.Item1;  // Explicitly assign the first item in the tuple (AQI)
+                string status = result.Item2;  // Explicitly assign the second item in the tuple (Status)
+
+                sensor.AQI = aqi; // Assuming you have an AQI field in your Sensor model
+                sensor.AirQualityStatus = status; // Assuming you have an AirQualityStatus field in your Sensor model
+                _logger.LogInformation($"Sensor: {sensor.LocationName}, StationId: {sensor.StationId}, AQI: {aqi}, Status: {status}");
+            }
+
+            // Return the view with the sensors and AQI data
+            return View("~/Views/Home/Monitoringadmin/sensormanagement.cshtml", sensors);
+        }
+
+        private async Task<(int, string)> GetAQIData(int stationId)
+        {
+            try
+            {
+                var apiKey = API_KEY; // Replace with your actual AQICN API key
+                var url = $"https://api.waqi.info/feed/@{stationId}/?token={apiKey}";
+
+                using (var client = new HttpClient())
                 {
-                    int aqi = (int)data["data"]["aqi"];
-                    string status = GetAQIStatus(aqi);
-                    return Tuple.Create(aqi, status);
+                    var response = await client.GetStringAsync(url);
+                    _logger.LogInformation($"AQI API Response: {response}"); // Log full response
+
+                    var data = JObject.Parse(response);
+
+                    if (data["data"] != null && data["data"]["aqi"] != null)
+                    {
+                        var aqi = data["data"]["aqi"].ToObject<int>();
+                        string status = GetAQIStatus(aqi);
+                        return (aqi, status);
+                    }
+                    else
+                    {
+                        _logger.LogError("AQI data is missing in API response.");
+                        return (0, "Unknown");
+                    }
                 }
             }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Error fetching AQI data: {ex.Message}");
+                return (0, "Unknown"); // Default in case of an error
+            }
         }
-        return null;
-    }
 
-    private string GetAQIStatus(int aqi)
-    {
-        if (aqi <= 50) return "Good";
-        if (aqi <= 100) return "Moderate";
-        if (aqi <= 150) return "Unhealthy for Sensitive Groups";
-        if (aqi <= 200) return "Unhealthy";
-        if (aqi <= 300) return "Very Unhealthy";
-        return "Hazardous";
+
+        // Method to convert AQI value to status
+        private string GetAQIStatus(int aqi)
+        {
+            if (aqi == 1) return "Good";
+            if (aqi == 2) return "Fair";
+            if (aqi == 3) return "Moderate";
+            if (aqi == 4) return "Poor";
+            return "Very Poor";
+        }
+
+     
+        // Add Sensor
+        public IActionResult AddSensor(SensorViewModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                var sensors = _context.Sensors.ToList(); // Get existing sensors from DB
+                return View("~/Views/Home/Monitoringadmin/sensormanagement.cshtml", sensors);
+            }
+
+            try
+            {
+                // Create a new sensor based on the form input
+                var newSensor = new Sensor
+                {
+                    LocationName = model.LocationName,
+                    Type = model.Type,
+                    StationId=model.StationId,
+                    Status = model.Status,
+                    CreatedDate = model.CreatedDate
+                };
+
+                // Add the new sensor to the database and save changes
+                _context.Sensors.Add(newSensor);
+                _context.SaveChanges();
+
+                // Redirect to the sensor management page after adding the new sensor
+                return RedirectToAction(nameof(SensorManagement));
+            }
+            catch (Exception ex)
+            {
+                // Log the error (consider logging into a file or a monitoring system)
+                _logger.LogError($"Error occurred while adding sensor: {ex.Message}");
+
+                // Optionally return an error message to the view or show a friendly error page
+                ModelState.AddModelError("", "An error occurred while saving the sensor.");
+                var sensors = _context.Sensors.ToList(); // Get existing sensors from DB
+                return View("~/Views/Home/Monitoringadmin/sensormanagement.cshtml", sensors);
+            }
+        }
     }
 }
