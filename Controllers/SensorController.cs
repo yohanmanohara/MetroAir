@@ -27,6 +27,52 @@ namespace MetroAir.Controllers
             _context = context;
         }
 
+
+        [HttpPost]
+        [Route("Home/SensorManagement")]
+        public IActionResult EditSensor(int id, string locationName)
+        {
+            var sensor = _context.Sensors.FirstOrDefault(s => s.Id == id);
+            if (sensor != null)
+            {
+                sensor.LocationName = locationName;
+
+                _context.Update(sensor);  // Update the sensor entity in the context
+                _context.SaveChanges();  // Commit changes to the database
+            }
+
+            // Redirect to the SensorManagement view
+            return RedirectToAction(nameof(SensorManagement));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult ChangeStatus(int id, string status)
+        {
+            // Find the sensor based on its Id
+            var sensor = _context.Sensors.FirstOrDefault(s => s.Id == id);
+            if (sensor != null)
+            {
+                // Toggle the Status
+                if (status == "Active")
+                {
+                    sensor.Status = "Inactive"; // Deactivate
+                }
+                else
+                {
+                    sensor.Status = "Active"; // Activate
+                }
+
+                // Save the changes to the database
+                _context.Update(sensor);  // Update the status
+                _context.SaveChanges();   // Save the changes
+            }
+
+            // Redirect to the SensorManagement view
+            return RedirectToAction(nameof(SensorManagement));
+        }
+
+
         // Delete Sensor
         [HttpPost]
         [ValidateAntiForgeryToken]
