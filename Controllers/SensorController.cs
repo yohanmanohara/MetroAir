@@ -113,14 +113,16 @@ namespace MetroAir.Controllers
         // Method to convert AQI value to status
         private string GetAQIStatus(int aqi)
         {
-            if (aqi == 1) return "Good";
-            if (aqi == 2) return "Fair";
-            if (aqi == 3) return "Moderate";
-            if (aqi == 4) return "Poor";
-            return "Very Poor";
+            if (aqi >= 0 && aqi <= 50) return "Good";
+            if (aqi >= 51 && aqi <= 100) return "Fair";
+            if (aqi >= 101 && aqi <= 150) return "Moderate";
+            if (aqi >= 151 && aqi <= 200) return "Poor";
+            if (aqi >= 201 && aqi <= 300) return "Very Poor";
+            return "Hazardous"; // For AQI above 300
         }
 
-     
+
+
         // Add Sensor
         public IActionResult AddSensor(SensorViewModel model)
         {
