@@ -1,0 +1,39 @@
+﻿@{
+    ViewBag.Title = "User Management";
+    Layout = "~/Views/Shared/_MonitoringAdminLayout.cshtml";
+}
+
+<!-- Bootstrap Container -->
+<div class="container mt-4">
+    <h2 class="mb-4 text-primary">User Management Overview</h2>
+
+    <!-- System Status Card -->
+    <div class="card mb-3">
+        <div class="card-header bg-info text-white">
+            <h5 class="mb-0">System Status</h5>
+        </div>
+        <div class="card-body">
+            <p class="mb-0">Status: <strong>@ViewBag.SystemStatus</strong></p>
+        </div>
+    </div>
+
+    <!-- Simulation Status Card -->
+    <div class="card mb-3">
+        <div class="card-header bg-warning text-dark">
+            <h5 class="mb-0">Simulation Status</h5>
+        </div>
+        <div class="card-body">
+            <p class="mb-0">Status: <strong>@ViewBag.SimulationStatus</strong></p>
+        </div>
+    </div>
+
+    <!-- Active Sensors Card -->
+    <div class="card mb-3">
+        <div class="card-header bg-success text-white">
+            <h5 class="mb-0">Active Sensors</h5>
+        </div>
+        <div class="card-body">
+            <p class="mb-0">Number of Active Sensors: <strong>@ViewBag.ActiveSensors</strong></p>
+        </div>
+    </div>
+</div>

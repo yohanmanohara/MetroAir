@@ -57,10 +57,27 @@ namespace UserRoles.Controllers
 
 
         [Authorize(Roles = "MonitoringAdmin")]
-        public IActionResult MonitoringAdmin()
+        public IActionResult Overview()
         {
-            return View("~/Views/Home/WebMaster/MonitoringAdmin.cshtml");
+            return View("~/Views/Home/Monitoringadmin/overview.cshtml");
         }
+
+        [Authorize(Roles = "MonitoringAdmin")]
+        public IActionResult SensorManagement()
+        {
+            return View("~/Views/Home/Monitoringadmin/SensorManagement.cshtml");
+        }
+        [Authorize(Roles = "MonitoringAdmin")]
+        public IActionResult UserManagemnt()
+        {
+            return View("~/Views/Home/Monitoringadmin/UserManagement.cshtml");
+        }
+        [Authorize(Roles = "MonitoringAdmin")]
+        public IActionResult DataSimulationManagement()
+        {
+            return View("~/Views/Home/Monitoringadmin/datasimulationmanagement.cshtml");
+        }
+
 
         //[Authorize(Roles = "User")]
         //public IActionResult User()
