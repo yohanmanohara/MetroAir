@@ -1,9 +1,15 @@
 ﻿@{
     ViewData["Title"] = "Air Quality Monitoring";
 }
+<!-- Leaflet CSS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+
 
 <div class="container-fluid p-0">
-    <!-- Hero Section -->
+   
     <header class="bg-primary text-white text-center py-5">
         <div class="container">
             <h1 class="display-3 fw-bold">Check Your Air Quality</h1>
@@ -12,7 +18,7 @@
         </div>
     </header>
 
-    <!-- Air Quality Information -->
+  
     <section id="air-quality" class="py-5">
         <div class="container text-center">
             <h2 class="fw-bold">Current Air Quality Index</h2>
@@ -70,6 +76,73 @@
             </div>
         </div>
     </section>
+
+<div id="map" style="height: 500px;"></div>
+
+<!-- Bootstrap Modal -->
+<div class="modal fade" id="aqiModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content rounded-4 shadow-lg">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="modalTitle"></h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-6">
+                        <p><strong class="text-muted">Air Quality Index (AQI):</strong> <span id="modalAqi"></span></p>
+                        <p><strong class="text-muted">PM2.5:</strong> <span id="modalPm25"></span></p>
+                        <p><strong class="text-muted">PM10:</strong> <span id="modalPm10"></span></p>
+                    </div>
+                    <div class="col-6">
+                        <p><strong class="text-muted">Temperature:</strong> <span id="modalTemp"></span>°C</p>
+                        <p><strong class="text-muted">Humidity:</strong> <span id="modalHumidity"></span>%</p>
+                        <p><strong class="text-muted">Pressure:</strong> <span id="modalPressure"></span> hPa</p>
+                        <p><strong class="text-muted">Wind Speed:</strong> <span id="modalWind"></span> km/h</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    var map = L.map('map').setView([6.913047, 79.84807], 12);
+
+    
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    fetch('/api/airquality')
+    .then(response => response.json())
+    .then(data => {
+        data.locations.forEach(location => {
+            var marker = L.marker([location.latitude, location.longitude]).addTo(map);
+            marker.bindPopup(`<b>${location.name}</b><br>AQI: ${location.aqi}`).on('click', function() {
+                openModal(location);
+            });
+        });
+    });
+
+    function openModal(location) {
+        document.getElementById("modalTitle").innerText = location.name;
+        document.getElementById("modalAqi").innerText = location.aqi;
+        document.getElementById("modalPm25").innerText = location.pm25;
+        document.getElementById("modalPm10").innerText = location.pm10;
+        document.getElementById("modalTemp").innerText = location.temp;
+        document.getElementById("modalHumidity").innerText = location.humidity;
+        document.getElementById("modalPressure").innerText = location.pressure;
+        document.getElementById("modalWind").innerText = location.wind;
+
+        var modal = new bootstrap.Modal(document.getElementById("aqiModal"));
+        modal.show();
+    }
+});
+</script>
+
 
     <!-- Footer -->
     <footer class="bg-dark text-white text-center py-4">
