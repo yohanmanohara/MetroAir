@@ -11,6 +11,7 @@ using MetroAir.ViewModels;
 using UserRoles.Models;
 using Microsoft.EntityFrameworkCore;
 using UserRoles.Data;
+using Microsoft.AspNetCore.Authorization;
 
 namespace MetroAir.Controllers
 {
@@ -28,6 +29,27 @@ namespace MetroAir.Controllers
         }
 
 
+
+
+        [Authorize(Roles = "MonitoringAdmin")]
+        [HttpPost]
+        [Route("Home/overview")]
+        public IActionResult GetActiveSensors()
+        {
+            try
+            {
+                int activeSensors = _context.Sensors.Count(s => s.Status == "Active");
+                return Ok(new { ActiveSensors = activeSensors });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { Message = "Error retrieving sensor data", Error = ex.Message });
+            }
+        }
+
+
+
+        [Authorize(Roles = "MonitoringAdmin")]
         [HttpPost]
         [Route("Home/SensorManagement")]
         public IActionResult EditSensor(int id, string locationName)
@@ -95,6 +117,7 @@ namespace MetroAir.Controllers
 
 
         // Route for Sensor Management
+        [Authorize(Roles = "MonitoringAdmin")]
         [Route("Home/SensorManagement")]
         public async Task<IActionResult> SensorManagement()
         {

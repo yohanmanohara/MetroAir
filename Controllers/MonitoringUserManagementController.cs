@@ -10,20 +10,20 @@ using UserRoles.ViewModels;
 
 namespace UserRoles.Controllers
 {
-    public class MonitoringUserManagementController : Controller
+    public class UserManagementController : Controller
     {
         private readonly UserManager<Users> _userManager;
         private readonly RoleManager<IdentityRole> _roleManager;
 
-        public MonitoringUserManagementController(UserManager<Users> userManager, RoleManager<IdentityRole> roleManager)
+        public UserManagementController(UserManager<Users> userManager, RoleManager<IdentityRole> roleManager)
         {
             _userManager = userManager;
             _roleManager = roleManager;
         }
 
         // GET:
-        [Authorize(Roles = "WebMaster")]
-        [Route("Home/UserManagement")]
+        [Authorize(Roles = "MonitoringAdmin")]
+        [Route("Home/MonitoringUserManagement")]
         public async Task<IActionResult> UserManagement()
         {
             var usersList = await _userManager.Users.ToListAsync(); // Fetch all users
@@ -42,13 +42,12 @@ namespace UserRoles.Controllers
                 });
             }
 
-            return View("~/Views/Home/WebMaster/UserManagement.cshtml", users);
+            return View("~/Views/Home/Monitoringadmin/MonitoringUserManagement.cshtml", users);
         }
 
 
 
         // POST: UserManagement/Delete/5
-
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Delete(string id)

@@ -39,6 +39,8 @@ namespace UserRoles.Controllers
         }
 
 
+
+
         //data provider
         [Authorize(Roles = "DataProvider")]
         public IActionResult SystemLog()
@@ -68,9 +70,9 @@ namespace UserRoles.Controllers
             return View("~/Views/Home/Monitoringadmin/SensorManagement.cshtml");
         }
         [Authorize(Roles = "MonitoringAdmin")]
-        public IActionResult UserManagemnt()
+        public IActionResult MonitoringUserManagement()
         {
-            return View("~/Views/Home/Monitoringadmin/UserManagement.cshtml");
+            return View("~/Views/Home/Monitoringadmin/MonitoringUserManagement.cshtml");
         }
         [Authorize(Roles = "MonitoringAdmin")]
         public IActionResult DataSimulationManagement()

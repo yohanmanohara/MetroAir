@@ -7,47 +7,62 @@
     <h2 class="text-center mb-4">View System Status</h2>
 
     <div class="row">
-        <!-- Simulation Status -->
-        <div class="col-md-6">
-            <div class="card shadow-sm">
-                <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0">Simulation Status</h5>
-                </div>
-                <div class="card-body">
-                    <p class="fw-bold">Current Status: <span class="badge bg-success">Running</span></p>
-                    <button class="btn btn-warning btn-sm">Pause Simulation</button>
-                    <button class="btn btn-danger btn-sm">Stop Simulation</button>
-                </div>
-            </div>
-        </div>
-
         <!-- Number of Active Sensors -->
-        <div class="col-md-6">
-            <div class="card shadow-sm">
-                <div class="card-header bg-secondary text-white">
+        <div class="col-md-6 d-flex justify-content-center">
+            <div class="card shadow-sm rounded-lg" style="max-width: 400px; width: 100%;">
+                <div class="card-header bg-secondary text-white text-center">
                     <h5 class="mb-0">Active Sensors</h5>
                 </div>
-                <div class="card-body">
-                    <h3 class="fw-bold text-primary">15 Sensors Active</h3>
-                    <button class="btn btn-outline-primary btn-sm">View Details</button>
+                <div class="card-body text-center">
+                    <div id="loadingSpinner" class="spinner-border text-primary" role="status" style="display: none;">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <h3 id="activeSensors" class="fw-bold text-primary" style="font-size: 2rem;">
+                        Loading...
+                    </h3>
+                    <p id="additionalInfo" class="mt-3 text-muted" style="font-size: 1rem;"></p>
                 </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- System Health Status -->
-    <div class="row mt-4">
-        <div class="col-md-12">
-            <div class="card shadow-sm">
-                <div class="card-header bg-success text-white">
-                    <h5 class="mb-0">System Health Status</h5>
-                </div>
-                <div class="card-body">
-                    <p class="fw-bold">Overall System Health: <span class="badge bg-info">Stable</span></p>
-                    <p>Last Checked: <span class="text-muted">@DateTime.Now.ToString("MMMM dd, yyyy HH:mm")</span></p>
-                    <button class="btn btn-outline-success btn-sm">Refresh Status</button>
+                <div class="card-footer text-center bg-light">
+                    <small class="text-muted">Last updated: <span id="lastUpdated">Just now</span></small>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        const fetchActiveSensors = async () => {
+            try {
+                // Show the loading spinner
+                document.getElementById("loadingSpinner").style.display = "block";
+
+                const response = await fetch("/Home/overview", { method: "POST", headers: { "Content-Type": "application/json" } });
+                if (!response.ok) {
+                    throw new Error("Network response was not ok.");
+                }
+                const data = await response.json();
+
+                // Hide the loading spinner once data is fetched
+                document.getElementById("loadingSpinner").style.display = "none";
+
+                // Update the content of the card
+                document.getElementById("activeSensors").textContent = `${data.activeSensors} Sensors Active`;
+
+                // Add additional information
+                document.getElementById("additionalInfo").textContent = `Total Sensors: ${data.totalSensors}, Last Checked: ${new Date().toLocaleTimeString()}`;
+
+                // Update last updated time
+                document.getElementById("lastUpdated").textContent = new Date().toLocaleTimeString();
+            } catch (error) {
+                // Hide the loading spinner and show an error message
+                document.getElementById("loadingSpinner").style.display = "none";
+                document.getElementById("activeSensors").textContent = "Error loading data";
+                console.error("Error fetching active sensors:", error);
+            }
+        };
+
+        fetchActiveSensors();
+    });
+</script>
+ 
