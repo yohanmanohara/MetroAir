@@ -39,7 +39,7 @@
         <tbody>
             @if (Model != null && Model.Any())
             {
-                foreach (var user in Model.Where(u => !u.Roles.Contains("WebMaster")))
+                foreach (var user in Model.Where(u => !u.Roles.Contains("WebMaster") && !u.Roles.Contains("DataProvider")))
                 {
                     <tr>
                         <td>@user.FullName</td>
