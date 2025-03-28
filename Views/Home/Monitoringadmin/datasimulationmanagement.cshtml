@@ -1,8 +1,187 @@
-﻿@{
-    ViewBag.Title = "User Management";
+﻿@model MetroAir.Models.SimulationSettings
+@{
+    ViewBag.Title = "Data Simulation Management";
     Layout = "~/Views/Shared/_MonitoringAdminLayout.cshtml";
 }
 
-<div>
-  nelkf
+<div class="container-fluid">
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Air Quality Simulation Control</h6>
+        </div>
+        <div class="card-body">
+            @if (TempData["SuccessMessage"] != null)
+            {
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    @TempData["SuccessMessage"]
+                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+            }
+
+            @if (TempData["ErrorMessage"] != null)
+            {
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    @TempData["ErrorMessage"]
+                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+            }
+
+            <form asp-action="UpdateSettings" method="post" class="needs-validation" novalidate>
+                @Html.AntiForgeryToken()
+
+                <div class="form-row">
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="UpdateFrequencyMinutes">Update Frequency (minutes)</label>
+                        <input asp-for="UpdateFrequencyMinutes" class="form-control" min="1" max="60" required>
+                        <div class="invalid-feedback">Please enter a value between 1 and 60</div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label>Simulation Status</label>
+                        <div class="d-flex align-items-center">
+                            @if (Model.IsRunning)
+                            {
+                                <span class="badge badge-success p-2 mr-2">ACTIVE</span>
+                                <button type="button" onclick="toggleSimulation(false)"
+                                        class="btn btn-danger btn-sm">
+                                    Stop Simulation
+                                </button>
+                            }
+                            else
+                            {
+                                <span class="badge badge-danger p-2 mr-2">INACTIVE</span>
+                                <button type="button" onclick="toggleSimulation(true)"
+                                        class="btn btn-success btn-sm">
+                                    Start Simulation
+                                </button>
+                            }
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="col-md-4 mb-3">
+                        <label asp-for="DailyVariationFactor">Daily Variation Factor</label>
+                        <input asp-for="DailyVariationFactor" class="form-control" step="0.01" min="0" max="1" required>
+                        <small class="form-text text-muted">0 = no variation, 1 = max variation</small>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label asp-for="RandomVariationFactor">Random Variation Factor</label>
+                        <input asp-for="RandomVariationFactor" class="form-control" step="0.01" min="0" max="1" required>
+                        <small class="form-text text-muted">Randomness in data</small>
+                    </div>
+                </div>
+
+                <hr class="my-4">
+                <h5 class="mb-3">Baseline Pollution Levels</h5>
+
+                <div class="form-row">
+                    <div class="col-md-4 mb-3">
+                        <label asp-for="BasePM2_5">PM2.5 (µg/m³)</label>
+                        <input asp-for="BasePM2_5" class="form-control" step="0.1" required>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label asp-for="BasePM10">PM10 (µg/m³)</label>
+                        <input asp-for="BasePM10" class="form-control" step="0.1" required>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label asp-for="BaseNO2">NO₂ (ppb)</label>
+                        <input asp-for="BaseNO2" class="form-control" step="0.1" required>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="col-md-4 mb-3">
+                        <label asp-for="BaseSO2">SO₂ (ppb)</label>
+                        <input asp-for="BaseSO2" class="form-control" step="0.1" required>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label asp-for="BaseCO">CO (ppm)</label>
+                        <input asp-for="BaseCO" class="form-control" step="0.01" required>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label asp-for="BaseO3">O₃ (ppb)</label>
+                        <input asp-for="BaseO3" class="form-control" step="0.1" required>
+                    </div>
+                </div>
+
+                <button class="btn btn-primary" type="submit">Save Settings</button>
+            </form>
+        </div>
+    </div>
 </div>
+
+@section Scripts {
+    <script>
+        // Form validation
+        (function() {
+            'use strict';
+            window.addEventListener('load', function() {
+                var forms = document.getElementsByClassName('needs-validation');
+                Array.prototype.filter.call(forms, function(form) {
+                    form.addEventListener('submit', function(event) {
+                        if (form.checkValidity() === false) {
+                            event.preventDefault();
+                            event.stopPropagation();
+                        }
+                        form.classList.add('was-validated');
+                    }, false);
+                });
+            }, false);
+        })();
+
+        function toggleSimulation(isRunning) {
+            fetch('@Url.Action("ToggleSimulation", "Simulation")', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                },
+                body: JSON.stringify(isRunning)
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(err => { throw err; });
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    window.location.reload();
+                } else {
+                    showError(data.error || 'Failed to toggle simulation');
+                }
+            })
+            .catch(error => {
+                showError(error.message || 'An error occurred while toggling simulation status');
+            });
+        }
+
+        function showError(message) {
+            // Remove existing error alerts
+            document.querySelectorAll('.alert.alert-danger').forEach(el => el.remove());
+
+            // Create error alert
+            const alertDiv = document.createElement('div');
+            alertDiv.className = 'alert alert-danger alert-dismissible fade show';
+            alertDiv.innerHTML = `
+                ${message}
+                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            `;
+
+            // Insert after the card header
+            const cardBody = document.querySelector('.card-body');
+            cardBody.insertBefore(alertDiv, cardBody.firstChild);
+
+            // Auto-close after 5 seconds
+            setTimeout(() => {
+                $(alertDiv).alert('close');
+            }, 5000);
+        }
+    </script>
+}

@@ -203,7 +203,7 @@ namespace MetroAir.Controllers
 
             try
             {
-                // Create a new sensor based on the form input
+                
                 var newSensor = new Sensor
                 {
                     LocationName = model.LocationName,

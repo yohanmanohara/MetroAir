@@ -45,8 +45,6 @@ namespace UserRoles.Controllers
             return View("~/Views/Home/WebMaster/UserManagement.cshtml", users);
         }
 
-
-
         // POST: UserManagement/Delete/5
 
         [HttpPost]
