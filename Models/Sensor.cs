@@ -11,12 +11,15 @@ namespace MetroAir.Models
         public int StationId { get; set; }
         public string Status { get; set; } = "Inactive"; // Default to inactive
         public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
+
         public DateTime LastUpdated { get; set; }
-        public int AQI { get; set; }
+        public int? AQI { get; set; }
         public string AirQualityStatus { get; set; } = "Unknown";
 
         // Navigation property for historical data
         public ICollection<AirQualityHistory> HistoricalData { get; set; }
+
+        public ICollection<AqiAlert> AqiAlerts { get; set; }
 
     }
 
