@@ -1,3 +1,4 @@
+using MetroAir.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using UserRoles.Data;
@@ -24,6 +25,8 @@ builder.Services.AddIdentity<Users, IdentityRole>(options =>
 })
     .AddEntityFrameworkStores<AppDbContext>()
     .AddDefaultTokenProviders();
+builder.Services.AddHttpClient();
+builder.Services.AddHostedService<AirQualityBackgroundService>();
 
 var app = builder.Build();
 
