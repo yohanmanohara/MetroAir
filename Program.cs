@@ -25,6 +25,9 @@ builder.Services.AddIdentity<Users, IdentityRole>(options =>
 })
     .AddEntityFrameworkStores<AppDbContext>()
     .AddDefaultTokenProviders();
+
+// In your Program.cs or Startup.cs
+builder.Services.AddScoped<AlertService>();
 builder.Services.AddHttpClient();
 builder.Services.AddHostedService<AirQualityBackgroundService>();
 
