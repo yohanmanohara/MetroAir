@@ -1,9 +1,333 @@
 ﻿@{
-  
     Layout = "~/Views/Shared/_WebMasterLayout.cshtml";
+    ViewBag.Title = "System Configuration";
 }
 
-<div>
-  systerm configuratioon
-  
+<div class="container mt-4">
+    <h2 class="mb-4">System Configuration</h2>
+
+    <!-- Database Backup Card -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">Database Management</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="flex-grow-1">
+                            <h6 class="mb-0">Create Database Backup</h6>
+                            <small class="text-muted">Generate a full backup of the current database</small>
+                        </div>
+                        <button id="createBackupBtn" class="btn btn-outline-primary ms-3">
+                            <i class="fas fa-database me-1"></i> Create Backup
+                        </button>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="flex-grow-1">
+                            <h6 class="mb-0">Restore Database</h6>
+                            <small class="text-muted">Restore from a previous backup file</small>
+                        </div>
+                        <button id="restoreBackupBtn" class="btn btn-outline-secondary ms-3" disabled>
+                            <i class="fas fa-undo me-1"></i> Restore
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Backup List -->
+            <div class="mt-4">
+                <h6>Available Backups</h6>
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover" id="backupTable">
+                        <thead>
+                            <tr>
+                                <th>File Name</th>
+                                <th>Date</th>
+                                <th>Size</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="backupListBody">
+                            <!-- Will be populated by JavaScript -->
+                            <tr>
+                                <td colspan="4" class="text-center">Loading backups...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
+
+<!-- Backup Progress Modal -->
+<div class="modal fade" id="backupModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="backupModalTitle">Database Backup</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="backupProgressContainer">
+                    <div class="progress mb-3">
+                        <div id="backupProgressBar" class="progress-bar progress-bar-striped progress-bar-animated"
+                             role="progressbar" style="width: 0%"></div>
+                    </div>
+                    <div id="backupStatusText" class="text-center">Preparing backup...</div>
+                </div>
+                <div id="backupSuccessAlert" class="alert alert-success d-none">
+                    <i class="fas fa-check-circle me-2"></i>
+                    <span id="successMessage">Backup completed successfully!</span>
+                </div>
+                <div id="backupErrorAlert" class="alert alert-danger d-none">
+                    <i class="fas fa-exclamation-circle me-2"></i>
+                    <span id="errorMessage">Error occurred during backup</span>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" id="closeBackupModalBtn">Close</button>
+                <button type="button" class="btn btn-primary d-none" id="downloadBackupBtn">
+                    <i class="fas fa-download me-1"></i> Download Backup
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const backupModal = new bootstrap.Modal('#backupModal');
+            let currentBackupFileName = '';
+
+            // Load available backups
+            loadBackupList();
+
+            // Create backup button click handler
+            document.getElementById('createBackupBtn').addEventListener('click', function() {
+                startBackupProcess();
+            });
+
+            // Download button click handler
+            document.getElementById('downloadBackupBtn').addEventListener('click', function() {
+                if (currentBackupFileName) {
+                    window.location.href = `/Home/SystemConfiguration/DownloadBackup?fileName=${encodeURIComponent(currentBackupFileName)}`;
+                }
+            });
+
+            // Function to load backup list
+            function loadBackupList() {
+                fetch('/Home/SystemConfiguration/GetBackupList', {
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        return response.text().then(text => {
+                            throw new Error(text.includes('<!DOCTYPE') ?
+                                'Server returned an error page' : text);
+                        });
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    const tbody = document.getElementById('backupListBody');
+                    tbody.innerHTML = '';
+
+                    if (data.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="4" class="text-center">No backups available</td></tr>';
+                        return;
+                    }
+
+                    data.forEach(backup => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${backup.fileName}</td>
+                            <td>${new Date(backup.created).toLocaleString()}</td>
+                            <td>${formatFileSize(backup.size)}</td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-primary download-btn"
+                                        data-filename="${backup.fileName}">
+                                    <i class="fas fa-download"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger delete-btn ms-1"
+                                        data-filename="${backup.fileName}">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                        `;
+                        tbody.appendChild(row);
+                    });
+
+                    // Add event listeners to new buttons
+                    document.querySelectorAll('.download-btn').forEach(btn => {
+                        btn.addEventListener('click', function() {
+                            const fileName = this.getAttribute('data-filename');
+                            window.location.href = `/Home/SystemConfiguration/DownloadBackup?fileName=${encodeURIComponent(fileName)}`;
+                        });
+                    });
+
+                    document.querySelectorAll('.delete-btn').forEach(btn => {
+                        btn.addEventListener('click', function() {
+                            const fileName = this.getAttribute('data-filename');
+                            if (confirm(`Are you sure you want to delete backup "${fileName}"?`)) {
+                                deleteBackup(fileName);
+                            }
+                        });
+                    });
+                })
+                .catch(error => {
+                    console.error('Error loading backup list:', error);
+                    document.getElementById('backupListBody').innerHTML =
+                        '<tr><td colspan="4" class="text-center text-danger">Error loading backups</td></tr>';
+                });
+            }
+
+            // Function to start backup process
+            function startBackupProcess() {
+                // Reset modal state
+                document.getElementById('backupProgressContainer').classList.remove('d-none');
+                document.getElementById('backupSuccessAlert').classList.add('d-none');
+                document.getElementById('backupErrorAlert').classList.add('d-none');
+                document.getElementById('downloadBackupBtn').classList.add('d-none');
+                document.getElementById('backupProgressBar').style.width = '0%';
+                document.getElementById('backupStatusText').textContent = 'Preparing backup...';
+
+                // Show modal
+                backupModal.show();
+
+                // Start backup
+                fetch('/Home/SystemConfiguration/CreateBackup', {
+                    method: 'POST',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                    }
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        return response.text().then(text => {
+                            throw new Error(text.includes('<!DOCTYPE') ?
+                                'Server returned an error page' : text);
+                        });
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.success) {
+                        // Update progress to 100%
+                        document.getElementById('backupProgressBar').style.width = '100%';
+                        document.getElementById('backupStatusText').textContent = 'Backup completed!';
+
+                        // Show success message
+                        document.getElementById('backupProgressContainer').classList.add('d-none');
+                        document.getElementById('backupSuccessAlert').classList.remove('d-none');
+                        document.getElementById('downloadBackupBtn').classList.remove('d-none');
+
+                        currentBackupFileName = data.fileName;
+
+                        // Reload backup list
+                        loadBackupList();
+                    } else {
+                        throw new Error(data.message || 'Backup failed');
+                    }
+                })
+                .catch(error => {
+                    console.error('Backup error:', error);
+                    document.getElementById('backupProgressContainer').classList.add('d-none');
+                    document.getElementById('backupErrorAlert').classList.remove('d-none');
+                    document.getElementById('errorMessage').textContent = error.message;
+                });
+            }
+
+            // Function to delete backup
+            function deleteBackup(fileName) {
+                fetch(`/Home/SystemConfiguration/DeleteBackup?fileName=${encodeURIComponent(fileName)}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Accept': 'application/json',
+                        'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                    }
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        return response.text().then(text => {
+                            throw new Error(text.includes('<!DOCTYPE') ?
+                                'Server returned an error page' : text);
+                        });
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.success) {
+                        showAlert(`Backup "${fileName}" deleted successfully`, 'success');
+                        loadBackupList();
+                    } else {
+                        throw new Error(data.message || 'Delete failed');
+                    }
+                })
+                .catch(error => {
+                    console.error('Delete error:', error);
+                    showAlert(`Error deleting backup: ${error.message}`, 'danger');
+                });
+            }
+
+            // Helper function to format file size
+            function formatFileSize(bytes) {
+                if (bytes === 0) return '0 Bytes';
+                const k = 1024;
+                const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+                const i = Math.floor(Math.log(bytes) / Math.log(k));
+                return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+            }
+
+            // Helper function to show alerts
+            function showAlert(message, type) {
+                const alert = document.createElement('div');
+                alert.className = `alert alert-${type} alert-dismissible fade show`;
+                alert.innerHTML = `
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                `;
+
+                const container = document.querySelector('.container');
+                container.insertBefore(alert, container.firstChild);
+
+                setTimeout(() => {
+                    alert.classList.remove('show');
+                    setTimeout(() => alert.remove(), 150);
+                }, 5000);
+            }
+        });
+    </script>
+}
+
+    <style>
+        .progress {
+            height: 1.5rem;
+        }
+
+        .progress-bar {
+            transition: width 0.3s ease;
+        }
+
+        #backupTable th {
+            font-weight: 500;
+            background-color: #f8f9fa;
+        }
+
+        .download-btn:hover {
+            color: #0d6efd;
+        }
+
+        .delete-btn:hover {
+            color: #dc3545;
+        }
+    </style>
+}

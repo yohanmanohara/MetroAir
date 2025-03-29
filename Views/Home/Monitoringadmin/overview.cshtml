@@ -1,68 +1,687 @@
 ﻿@{
-    ViewBag.Title = "View System Status";
+    ViewBag.Title = "System Overview";
     Layout = "~/Views/Shared/_MonitoringAdminLayout.cshtml";
 }
 
 <div class="container mt-4">
-    <h2 class="text-center mb-4">View System Status</h2>
+    <!-- Alert Notifications Section -->
+    <div id="alertContainer" class="mb-4"></div>
+
+    <h2 class="text-center mb-4">System Overview</h2>
+
+    <!-- AQI Threshold Settings Card -->
+    <div class="card mb-4 shadow-sm">
+        <div class="card-header bg-secondary text-white d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">AQI Alert Thresholds</h5>
+            <button id="saveThresholds" class="btn btn-sm btn-light">
+                <i class="fas fa-save me-1"></i> Save Settings
+            </button>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-2">
+                    <div class="form-group">
+                        <label class="form-label">Good</label>
+                        <div class="input-group">
+                            <span class="input-group-text">0-</span>
+                            <input type="number" class="form-control" id="goodThreshold" value="50" disabled>
+                        </div>
+                        <small class="text-muted">(0-50)</small>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="form-group">
+                        <label class="form-label">Moderate</label>
+                        <div class="input-group">
+                            <span class="input-group-text">51-</span>
+                            <input type="number" class="form-control" id="moderateThreshold" value="100">
+                        </div>
+                        <small class="text-muted">(51-100)</small>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="form-group">
+                        <label class="form-label">Unhealthy (Sensitive)</label>
+                        <div class="input-group">
+                            <span class="input-group-text">101-</span>
+                            <input type="number" class="form-control" id="unhealthySensitiveThreshold" value="150">
+                        </div>
+                        <small class="text-muted">(101-150)</small>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="form-group">
+                        <label class="form-label">Unhealthy</label>
+                        <div class="input-group">
+                            <span class="input-group-text">151-</span>
+                            <input type="number" class="form-control" id="unhealthyThreshold" value="200">
+                        </div>
+                        <small class="text-muted">(151-200)</small>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="form-group">
+                        <label class="form-label">Very Unhealthy</label>
+                        <div class="input-group">
+                            <span class="input-group-text">201-</span>
+                            <input type="number" class="form-control" id="veryUnhealthyThreshold" value="300">
+                        </div>
+                        <small class="text-muted">(201-300)</small>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="form-group">
+                        <label class="form-label">Hazardous</label>
+                        <div class="input-group">
+                            <span class="input-group-text">301+</span>
+                            <input type="number" class="form-control" id="hazardousThreshold" value="500" disabled>
+                        </div>
+                        <small class="text-muted">(301+)</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <div class="row">
-        <!-- Number of Active Sensors -->
-        <div class="col-md-6 d-flex justify-content-center">
-            <div class="card shadow-sm rounded-lg" style="max-width: 400px; width: 100%;">
-                <div class="card-header bg-secondary text-white text-center">
-                    <h5 class="mb-0">Active Sensors</h5>
+        <!-- System Status Card -->
+        <div class="col-md-6 mb-4">
+            <div class="card shadow-sm rounded-lg h-100">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0">System Status</h5>
                 </div>
-                <div class="card-body text-center">
-                    <div id="loadingSpinner" class="spinner-border text-primary" role="status" style="display: none;">
-                        <span class="visually-hidden">Loading...</span>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <div class="card bg-light h-100">
+                                <div class="card-body text-center">
+                                    <h6 class="card-title">Active Sensors</h6>
+                                    <div id="loadingSpinner" class="spinner-border text-primary" role="status" style="display: none;">
+                                        <span class="visually-hidden">Loading...</span>
+                                    </div>
+                                    <h3 id="activeSensors" class="fw-bold text-primary">@Model.ActiveSensorsCount</h3>
+                                    <small class="text-muted">Total: <span id="totalSensors">@Model.TotalSensorsCount</span></small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="card bg-light h-100">
+                                <div class="card-body text-center">
+                                    <h6 class="card-title">Simulation Status</h6>
+                                    <h3 id="simulationStatus" class="fw-bold">
+                                        <span class="badge @(Model.IsRunning ? "bg-success" : "bg-warning text-dark")">
+                                            @(Model.IsRunning ? "Running" : "Paused")
+                                        </span>
+                                    </h3>
+                                    <small class="text-muted">Interval: <span id="updateInterval">@Model.UpdateIntervalMinutes</span> mins</small>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <h3 id="activeSensors" class="fw-bold text-primary" style="font-size: 2rem;">
-                        Loading...
-                    </h3>
-                    <p id="additionalInfo" class="mt-3 text-muted" style="font-size: 1rem;"></p>
+                    <div class="text-center mt-2">
+                        <small class="text-muted">Last updated: <span id="lastUpdated">Just now</span></small>
+                    </div>
                 </div>
-                <div class="card-footer text-center bg-light">
-                    <small class="text-muted">Last updated: <span id="lastUpdated">Just now</span></small>
+            </div>
+        </div>
+
+        <!-- Sensors List Card -->
+        <div class="col-md-6 mb-4">
+            <div class="card shadow-sm rounded-lg h-100">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0">Sensors</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="bg-light">
+                                <tr>
+                                    <th>Location</th>
+                                    <th>Status</th>
+                                    <th>Last AQI</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="sensorsTableBody">
+                                @foreach (var sensor in Model.Sensors)
+                                {
+                                    <tr>
+                                        <td>@sensor.LocationName</td>
+                                        <td><span class="badge @(sensor.Status == "Active" ? "bg-success" : "bg-secondary")">@sensor.Status</span></td>
+                                        <td><span class="badge @GetAqiBadgeClass(sensor.AQI)">@(sensor.AQI?.ToString() ?? "N/A")</span></td>
+                                        <td>
+                                            <button class="btn btn-sm btn-outline-primary view-history"
+                                                    data-sensor-id="@sensor.Id"
+                                                    data-sensor-name="@sensor.LocationName">
+                                                View History
+                                            </button>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Historical Data Modal -->
+    <div class="modal fade" id="historyModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header bg-secondary text-white">
+                    <h5 class="modal-title" id="historyModalTitle">Sensor History</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row mb-3">
+                        <div class="col-md-3">
+                            <label for="startDate" class="form-label">From</label>
+                            <input type="date" class="form-control" id="startDate">
+                        </div>
+                        <div class="col-md-3">
+                            <label for="endDate" class="form-label">To</label>
+                            <input type="date" class="form-control" id="endDate">
+                        </div>
+                        <div class="col-md-3 d-flex align-items-end">
+                            <button id="applyFilter" class="btn btn-primary">Apply Filter</button>
+                        </div>
+                        <div class="col-md-3 d-flex align-items-end">
+                            <button id="resetFilter" class="btn btn-outline-secondary">Reset</button>
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Timestamp</th>
+                                    <th>AQI</th>
+                                    <th>Status</th>
+                                    <th>PM2.5</th>
+                                    <th>PM10</th>
+                                    <th>NO2</th>
+                                    <th>SO2</th>
+                                    <th>CO</th>
+                                    <th>O3</th>
+                                </tr>
+                            </thead>
+                            <tbody id="historyTableBody">
+                                <tr>
+                                    <td colspan="9" class="text-center">Select date range and click "Apply Filter"</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                 </div>
             </div>
         </div>
     </div>
 </div>
 
-<script>
-    document.addEventListener("DOMContentLoaded", () => {
-        const fetchActiveSensors = async () => {
-            try {
-                // Show the loading spinner
-                document.getElementById("loadingSpinner").style.display = "block";
+@section Scripts {
+    <script>
 
-                const response = await fetch("/Home/overview", { method: "POST", headers: { "Content-Type": "application/json" } });
-                if (!response.ok) {
-                    throw new Error("Network response was not ok.");
+
+
+
+        document.addEventListener("DOMContentLoaded", () => {
+            // Initialize Bootstrap modal
+            const historyModal = new bootstrap.Modal(document.getElementById('historyModal'));
+            let currentSensorId = null;
+            let currentSensorName = null;
+            let alertThresholds = {
+                good: 50,
+                moderate: 100,
+                unhealthySensitive: 150,
+                unhealthy: 200,
+                veryUnhealthy: 300,
+                hazardous: 500
+            };
+            let activeAlerts = [];
+
+            // Initialize thresholds from localStorage or defaults
+            const loadThresholds = () => {
+                const savedThresholds = localStorage.getItem('aqiThresholds');
+                if (savedThresholds) {
+                    alertThresholds = JSON.parse(savedThresholds);
+                    document.getElementById('moderateThreshold').value = alertThresholds.moderate;
+                    document.getElementById('unhealthySensitiveThreshold').value = alertThresholds.unhealthySensitive;
+                    document.getElementById('unhealthyThreshold').value = alertThresholds.unhealthy;
+                    document.getElementById('veryUnhealthyThreshold').value = alertThresholds.veryUnhealthy;
                 }
-                const data = await response.json();
+            };
 
-                // Hide the loading spinner once data is fetched
-                document.getElementById("loadingSpinner").style.display = "none";
+            // Save thresholds to localStorage
+            const saveThresholds = () => {
+                alertThresholds = {
+                    good: 50,
+                    moderate: parseInt(document.getElementById('moderateThreshold').value),
+                    unhealthySensitive: parseInt(document.getElementById('unhealthySensitiveThreshold').value),
+                    unhealthy: parseInt(document.getElementById('unhealthyThreshold').value),
+                    veryUnhealthy: parseInt(document.getElementById('veryUnhealthyThreshold').value),
+                    hazardous: 500
+                };
+                localStorage.setItem('aqiThresholds', JSON.stringify(alertThresholds));
 
-                // Update the content of the card
-                document.getElementById("activeSensors").textContent = `${data.activeSensors} Sensors Active`;
+                // Show success message
+                showAlert('Threshold settings saved successfully!', 'success');
 
-                // Add additional information
-                document.getElementById("additionalInfo").textContent = `Total Sensors: ${data.totalSensors}, Last Checked: ${new Date().toLocaleTimeString()}`;
+                // Re-check alerts with new thresholds
+                checkForAlerts();
+            };
 
-                // Update last updated time
-                document.getElementById("lastUpdated").textContent = new Date().toLocaleTimeString();
-            } catch (error) {
-                // Hide the loading spinner and show an error message
-                document.getElementById("loadingSpinner").style.display = "none";
-                document.getElementById("activeSensors").textContent = "Error loading data";
-                console.error("Error fetching active sensors:", error);
-            }
-        };
+            // Show alert notification
+            const showAlert = (message, type = 'danger') => {
+                const alertContainer = document.getElementById('alertContainer');
+                const alertId = 'alert-' + Date.now();
 
-        fetchActiveSensors();
-    });
-</script>
- 
+                const alertHtml = `
+                    <div id="${alertId}" class="alert alert-${type} alert-dismissible fade show" role="alert">
+                        ${message}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                `;
+
+                alertContainer.insertAdjacentHTML('afterbegin', alertHtml);
+
+                // Auto-dismiss after 5 seconds
+                setTimeout(() => {
+                    const alertElement = document.getElementById(alertId);
+                    if (alertElement) {
+                        const bsAlert = new bootstrap.Alert(alertElement);
+                        bsAlert.close();
+                    }
+                }, 5000);
+            };
+
+            // Check sensor data for alerts
+            const checkForAlerts = () => {
+                const sensorsTable = document.getElementById('sensorsTableBody');
+                if (!sensorsTable) return;
+
+                // Clear previous alerts
+                activeAlerts = [];
+
+                // Check each sensor row
+                sensorsTable.querySelectorAll('tr').forEach(row => {
+                    const aqiBadge = row.querySelector('td:nth-child(3) span.badge');
+                    if (!aqiBadge) return;
+
+                    const aqiText = aqiBadge.textContent.trim();
+                    const aqiValue = parseInt(aqiText);
+                    if (isNaN(aqiValue)) return;
+
+                    const location = row.querySelector('td:first-child').textContent.trim();
+
+                    // Determine alert level
+                    let alertLevel = '';
+                    if (aqiValue > alertThresholds.veryUnhealthy) {
+                        alertLevel = 'Hazardous';
+                    } else if (aqiValue > alertThresholds.unhealthy) {
+                        alertLevel = 'Very Unhealthy';
+                    } else if (aqiValue > alertThresholds.unhealthySensitive) {
+                        alertLevel = 'Unhealthy';
+                    } else if (aqiValue > alertThresholds.moderate) {
+                        alertLevel = 'Unhealthy for Sensitive Groups';
+                    }
+
+                    if (alertLevel) {
+                        activeAlerts.push({
+                            location,
+                            aqi: aqiValue,
+                            level: alertLevel
+                        });
+                    }
+                });
+
+                // Display alerts
+                displayActiveAlerts();
+            };
+
+            // Display active alerts
+            const displayActiveAlerts = () => {
+                const alertContainer = document.getElementById('alertContainer');
+                alertContainer.innerHTML = '';
+
+                if (activeAlerts.length === 0) return;
+
+                // Group alerts by level
+                const alertsByLevel = {};
+                activeAlerts.forEach(alert => {
+                    if (!alertsByLevel[alert.level]) {
+                        alertsByLevel[alert.level] = [];
+                    }
+                    alertsByLevel[alert.level].push(alert);
+                });
+
+                // Create alert for each level
+                Object.entries(alertsByLevel).forEach(([level, alerts]) => {
+                    const alertType = getAlertType(level);
+                    const locations = alerts.map(a => a.location).join(', ');
+                    const aqiValues = alerts.map(a => a.aqi).join(', ');
+
+                    const message = `
+                        <strong>${level} Air Quality Alert!</strong>
+                        Locations: ${locations}
+                        <br>AQI Values: ${aqiValues}
+                    `;
+
+                    showAlert(message, alertType);
+                });
+            };
+
+            // Get Bootstrap alert type based on AQI level
+            const getAlertType = (level) => {
+                switch(level) {
+                    case 'Hazardous': return 'dark';
+                    case 'Very Unhealthy': return 'danger';
+                    case 'Unhealthy': return 'warning';
+                    case 'Unhealthy for Sensitive Groups': return 'info';
+                    default: return 'danger';
+                }
+            };
+
+            // Helper function to get badge class based on AQI value
+            const getAqiBadgeClass = (aqi) => {
+                if (aqi === null || aqi === undefined) return 'bg-secondary';
+                aqi = Number(aqi);
+                if (aqi <= alertThresholds.good) return 'bg-success';
+                if (aqi <= alertThresholds.moderate) return 'bg-info';
+                if (aqi <= alertThresholds.unhealthySensitive) return 'bg-warning text-dark';
+                if (aqi <= alertThresholds.unhealthy) return 'bg-orange';
+                if (aqi <= alertThresholds.veryUnhealthy) return 'bg-danger';
+                return 'bg-dark';
+            };
+
+            // Safely set text content with null check
+            const safeSetText = (elementId, value, fallback = 'N/A') => {
+                const element = document.getElementById(elementId);
+                if (element) {
+                    element.textContent = value !== null && value !== undefined ? value : fallback;
+                }
+            };
+
+            // Format date to YYYY-MM-DD
+            const formatDate = (date) => {
+                const d = new Date(date);
+                const year = d.getFullYear();
+                const month = String(d.getMonth() + 1).padStart(2, '0');
+                const day = String(d.getDate()).padStart(2, '0');
+                return `${year}-${month}-${day}`;
+            };
+
+            // Set default date range (last 7 days)
+            const setDefaultDateRange = () => {
+                const endDate = new Date();
+                const startDate = new Date();
+                startDate.setDate(endDate.getDate() - 7);
+
+                document.getElementById('startDate').value = formatDate(startDate);
+                document.getElementById('endDate').value = formatDate(endDate);
+            };
+
+            const fetchSystemStatus = async () => {
+                try {
+                    document.getElementById("loadingSpinner").style.display = "block";
+
+                    const response = await fetch("/Home/Overview", {
+                        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                    });
+
+                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
+                    const data = await response.json();
+
+                    safeSetText("activeSensors", data.activeSensors);
+                    safeSetText("totalSensors", data.totalSensors);
+                    safeSetText("updateInterval", data.updateIntervalMinutes);
+                    safeSetText("lastUpdated", new Date().toLocaleString());
+
+                    const statusBadge = document.getElementById("simulationStatus");
+                    if (statusBadge) {
+                        statusBadge.innerHTML = data.isRunning
+                            ? '<span class="badge bg-success">Running</span>'
+                            : '<span class="badge bg-warning text-dark">Paused</span>';
+                    }
+
+                } catch (error) {
+                    console.error("Error fetching system status:", error);
+                    safeSetText("activeSensors", "Error");
+                    safeSetText("totalSensors", "Error");
+
+                    const statusBadge = document.getElementById("simulationStatus");
+                    if (statusBadge) {
+                        statusBadge.innerHTML = '<span class="badge bg-danger">Error</span>';
+                    }
+                } finally {
+                    const spinner = document.getElementById("loadingSpinner");
+                    if (spinner) spinner.style.display = "none";
+                }
+            };
+
+            const fetchSensors = async () => {
+                try {
+                    const response = await fetch("/Home/Overview/GetSensors", {
+                        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                    });
+
+                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
+                    const sensors = await response.json();
+                    const tableBody = document.getElementById("sensorsTableBody");
+
+                    if (!tableBody) return;
+
+                    if (!sensors || sensors.length === 0) {
+                        tableBody.innerHTML = '<tr><td colspan="4" class="text-center">No sensors found</td></tr>';
+                        return;
+                    }
+
+                    tableBody.innerHTML = sensors.map(sensor => `
+                        <tr>
+                            <td>${sensor.locationName || 'N/A'}</td>
+                            <td><span class="badge ${sensor.status === 'Active' ? 'bg-success' : 'bg-secondary'}">
+                                ${sensor.status || 'Unknown'}
+                            </span></td>
+                            <td><span class="badge ${getAqiBadgeClass(sensor.aqi)}">
+                                ${sensor.aqi !== null && sensor.aqi !== undefined ? sensor.aqi : 'N/A'}
+                            </span></td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-primary view-history"
+                                        data-sensor-id="${sensor.id || ''}"
+                                        data-sensor-name="${sensor.locationName || 'Unknown'}">
+                                    View History
+                                </button>
+                            </td>
+                        </tr>
+                    `).join('');
+
+                    document.querySelectorAll('.view-history').forEach(button => {
+                        button.addEventListener('click', (e) => {
+                            currentSensorId = e.currentTarget.getAttribute('data-sensor-id');
+                            currentSensorName = e.currentTarget.getAttribute('data-sensor-name');
+                            if (currentSensorId) {
+                                setDefaultDateRange();
+                                showSensorHistory();
+                            }
+                        });
+                    });
+
+                    // Check for alerts after loading sensors
+                    checkForAlerts();
+
+                } catch (error) {
+                    console.error("Error fetching sensors:", error);
+                    const tableBody = document.getElementById("sensorsTableBody");
+                    if (tableBody) {
+                        tableBody.innerHTML = `
+                            <tr>
+                                <td colspan="4" class="text-center text-danger">Error loading sensors</td>
+                            </tr>
+                        `;
+                    }
+                }
+            };
+
+            const showSensorHistory = async () => {
+                try {
+                    const modalTitle = document.getElementById("historyModalTitle");
+                    const tableBody = document.getElementById("historyTableBody");
+
+                    if (!modalTitle || !tableBody || !currentSensorId) return;
+
+                    modalTitle.textContent = `Historical Data - ${currentSensorName || 'Sensor'}`;
+                    tableBody.innerHTML = `
+                        <tr>
+                            <td colspan="9" class="text-center">Loading...</td>
+                        </tr>
+                    `;
+
+                    historyModal.show();
+
+                    const startDate = document.getElementById('startDate').value;
+                    const endDate = document.getElementById('endDate').value;
+
+                    const response = await fetch(`/Home/Overview/GetSensorHistory?sensorId=${currentSensorId}&startDate=${startDate}&endDate=${endDate}`);
+                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
+                    const historyData = await response.json();
+
+                    if (!historyData || historyData.length === 0) {
+                        tableBody.innerHTML = `
+                            <tr>
+                                <td colspan="9" class="text-center">No historical data available for selected date range</td>
+                            </tr>
+                        `;
+                        return;
+                    }
+
+                    tableBody.innerHTML = historyData.map(record => `
+                        <tr>
+                            <td>${record.timestamp ? new Date(record.timestamp).toLocaleString() : 'N/A'}</td>
+                            <td><span class="badge ${getAqiBadgeClass(record.aqi)}">${record.aqi || 'N/A'}</span></td>
+                            <td>${record.status || 'N/A'}</td>
+                            <td>${record.pm2_5 !== undefined ? record.pm2_5.toFixed(2) : 'N/A'}</td>
+                            <td>${record.pm10 !== undefined ? record.pm10.toFixed(2) : 'N/A'}</td>
+                            <td>${record.no2 !== undefined ? record.no2.toFixed(2) : 'N/A'}</td>
+                            <td>${record.so2 !== undefined ? record.so2.toFixed(2) : 'N/A'}</td>
+                            <td>${record.co !== undefined ? record.co.toFixed(2) : 'N/A'}</td>
+                            <td>${record.o3 !== undefined ? record.o3.toFixed(2) : 'N/A'}</td>
+                        </tr>
+                    `).join('');
+
+                } catch (error) {
+                    console.error("Error fetching sensor history:", error);
+                    const tableBody = document.getElementById("historyTableBody");
+                    if (tableBody) {
+                        tableBody.innerHTML = `
+                            <tr>
+                                <td colspan="9" class="text-center text-danger">Error loading history data</td>
+                            </tr>
+                        `;
+                    }
+                }
+            };
+
+            // Set up filter controls
+            document.getElementById('applyFilter').addEventListener('click', showSensorHistory);
+            document.getElementById('resetFilter').addEventListener('click', () => {
+                setDefaultDateRange();
+                showSensorHistory();
+            });
+
+            // Save thresholds button
+            document.getElementById('saveThresholds').addEventListener('click', saveThresholds);
+
+            // Initial load
+            loadThresholds();
+            setDefaultDateRange();
+            fetchSystemStatus();
+            fetchSensors();
+
+            // Refresh data every 30 seconds
+            const refreshInterval = setInterval(() => {
+                fetchSystemStatus();
+                fetchSensors();
+            }, 30000);
+
+            // Clean up interval when page unloads
+            window.addEventListener('beforeunload', () => {
+                clearInterval(refreshInterval);
+            });
+        });
+    </script>
+
+    <style>
+        .bg-orange {
+            background-color: #ff6a00;
+            color: white;
+        }
+
+        .table-hover tbody tr:hover {
+            background-color: rgba(0, 0, 0, 0.05);
+            cursor: pointer;
+        }
+
+        .modal-body {
+            max-height: 70vh;
+            overflow-y: auto;
+        }
+
+        #historyModal .modal-dialog {
+            max-width: 90%;
+        }
+
+        #historyTableBody tr td {
+            vertical-align: middle;
+        }
+
+        /* Alert styling */
+        #alertContainer {
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            width: 350px;
+            z-index: 1100;
+        }
+
+        .alert {
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            animation: slideIn 0.3s ease-out;
+        }
+
+
+
+        /* Threshold input styling */
+        .input-group-text {
+            min-width: 40px;
+            justify-content: center;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-label {
+            font-weight: 500;
+            margin-bottom: 0.25rem;
+        }
+    </style>
+}
+
+@functions {
+    public string GetAqiBadgeClass(int? aqi)
+    {
+        if (!aqi.HasValue) return "bg-secondary";
+        if (aqi <= 50) return "bg-success";
+        if (aqi <= 100) return "bg-info";
+        if (aqi <= 150) return "bg-warning text-dark";
+        if (aqi <= 200) return "bg-orange";
+        if (aqi <= 300) return "bg-danger";
+        return "bg-dark";
+    }
+} 

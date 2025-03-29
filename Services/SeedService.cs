@@ -23,7 +23,7 @@ namespace UserRoles.Services
                 var roles = new List<string>
                 {
                     "WebMaster",  
-                    "DataProvider",       
+                         
                     "MonitoringAdmin",
                 };
 

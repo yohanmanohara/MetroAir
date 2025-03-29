@@ -1,3 +1,4 @@
+using MetroAir.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using UserRoles.Data;
@@ -25,6 +26,11 @@ builder.Services.AddIdentity<Users, IdentityRole>(options =>
     .AddEntityFrameworkStores<AppDbContext>()
     .AddDefaultTokenProviders();
 
+// In your Program.cs or Startup.cs
+builder.Services.AddScoped<AlertService>();
+builder.Services.AddHttpClient();
+builder.Services.AddHostedService<AirQualityBackgroundService>();
+
 var app = builder.Build();
 
 await SeedService.SeedDatabase(app.Services);
@@ -45,6 +51,8 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapStaticAssets();
+
+app.MapControllers();
 
 app.MapControllerRoute(
     name: "default",

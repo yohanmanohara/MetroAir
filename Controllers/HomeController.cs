@@ -41,17 +41,7 @@ namespace UserRoles.Controllers
 
 
 
-        //data provider
-        [Authorize(Roles = "DataProvider")]
-        public IActionResult SystemLog()
-        {
-            return View("~/Views/Home/DataProvider/SystemLog.cshtml"); ;
-        }
-        [Authorize(Roles = "DataProvider")]
-        public IActionResult SystemReport()
-        {
-            return View("~/Views/Home/DataProvider/SystemReport.cshtml"); ;
-        }
+        
        
 
         //Monitoring admin
@@ -81,11 +71,7 @@ namespace UserRoles.Controllers
         }
 
 
-        //[Authorize(Roles = "User")]
-        //public IActionResult User()
-        //{
-        //    return View();
-        //}
+       
 
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
         public IActionResult Error()
