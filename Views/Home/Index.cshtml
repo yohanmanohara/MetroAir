@@ -41,6 +41,11 @@
             align-items: center;
             color: white;
             position: relative;
+            width: 100vw;
+            left: 50%;
+            right: 50%;
+            margin-left: -50vw;
+            margin-right: -50vw;
         }
 
             .hero::after {
@@ -57,53 +62,14 @@
         .hero-content {
             z-index: 1;
         }
-
-        /*Search bar*/
-        .search-wrapper {
-            max-width: 600px;
-            margin: 0 auto;
-        }
-
-        .search-box {
+        .map {
+            width: 100vw;
             position: relative;
-            background: white;
-            border-radius: 30px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
-            transition: all 0.3s ease;
+            left: 50%;
+            right: 50%;
+            margin-left: -50vw;
+            margin-right: -50vw;
         }
-
-            .search-box:focus-within {
-                box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
-                transform: translateY(-2px);
-            }
-
-        .search-input {
-            border: 2px solid #eee;
-            border-radius: 30px;
-            padding: 15px 25px;
-            padding-right: 50px;
-            width: 100%;
-            transition: all 0.3s ease;
-        }
-
-            .search-input:focus {
-                border-color: #007bff;
-                box-shadow: none;
-            }
-
-        .search-icon {
-            position: absolute;
-            right: 20px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: #666;
-            transition: all 0.3s ease;
-        }
-
-        .search-box:focus-within .search-icon {
-            color: #007bff;
-        }
-
         /* Feature Cards */
         .feature-card {
             border: none;
@@ -213,6 +179,11 @@
             color: white;
             position: relative;
             overflow: hidden;
+            width: 100vw;
+            left: 50%;
+            right: 50%;
+            margin-left: -50vw;
+            margin-right: -50vw;
         }
 
             .cta-section::before {
@@ -242,6 +213,12 @@
             background: var(--dark);
             color: white;
             padding: 0;
+            width: 100vw;
+            position: relative;
+            left: 50%;
+            right: 50%;
+            margin-left: -50vw;
+            margin-right: -50vw;
         }
 
         .footer-content {
@@ -339,25 +316,15 @@
         </div>
     </section>
 
-    <!--Search bar-->
+    <!--Search-->
     <section class="py-5">
-        <div class="text-center mb-5">
+        <div class="text-center">
             <h2 class="fw-bold">Search Your Town's Air Quality</h2>
             <p class="text-muted">Monitor air quality immediately</p>
         </div>
-        <div>
-            <div class="container">
-                <div class="search-wrapper">
-                    <div class="search-box">
-                        <input type="text" class="search-input form-control" placeholder="Search anything...">
-                        <i class="fas fa-search search-icon"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
     </section>
 
-    <div id="map" style="height: 500px;"></div>
+    <div id="map" class="map" style="height: 500px;"></div>
 
     <!-- Bootstrap Modal -->
     <div class="modal fade" id="aqiModal" tabindex="-1" aria-hidden="true">
@@ -476,7 +443,7 @@
     </section>
 
     <!-- About Section -->
-    <section class="about-section py-5 mt-5">
+    <section class="about-section py-5">
         <div class="container">
             <div class="row align-items-center">
                 <div class="col-lg-6 mb-5 mb-lg-0">
@@ -563,7 +530,7 @@
     <!-- Footer -->
     <footer>
         <div class="container footer-content">
-            <div class="row g-4">
+            <div class="row justify-content-center">
                 <div class="col-lg-4">
                     <h4 class="text-white mb-4">Colombo Air Quality</h4>
                     <p class="text-white-50">Providing real-time environmental data to help create a cleaner, healthier Colombo for everyone.</p>
@@ -581,17 +548,6 @@
                         <a href="#">Features</a>
                         <a href="#">Dashboard</a>
                         <a href="#">About Us</a>
-                        <a href="#">Contact</a>
-                    </div>
-                </div>
-                <div class="col-lg-2 col-md-4">
-                    <h5 class="text-white mb-4">Resources</h5>
-                    <div class="footer-links">
-                        <a href="#">Blog</a>
-                        <a href="#">FAQ</a>
-                        <a href="#">API Docs</a>
-                        <a href="#">Research</a>
-                        <a href="#">Help Center</a>
                     </div>
                 </div>
                 <div class="col-lg-4 col-md-4">
