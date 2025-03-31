@@ -324,71 +324,217 @@
         </div>
     </section>
 
-    <div id="map" class="map" style="height: 500px;"></div>
+<div id="map" class="map" style="height: 500px;"></div>
 
-    <!-- Bootstrap Modal -->
-    <div class="modal fade" id="aqiModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content rounded-4 shadow-lg">
-                <div class="modal-header bg-primary text-white">
-                    <h5 class="modal-title" id="modalTitle"></h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="row">
-                        <div class="col-6">
-                            <p><strong class="text-muted">Air Quality Index (AQI):</strong> <span id="modalAqi"></span></p>
-                            <p><strong class="text-muted">PM2.5:</strong> <span id="modalPm25"></span></p>
-                            <p><strong class="text-muted">PM10:</strong> <span id="modalPm10"></span></p>
-                        </div>
-                        <div class="col-6">
-                            <p><strong class="text-muted">Temperature:</strong> <span id="modalTemp"></span>°C</p>
-                            <p><strong class="text-muted">Humidity:</strong> <span id="modalHumidity"></span>%</p>
-                            <p><strong class="text-muted">Pressure:</strong> <span id="modalPressure"></span> hPa</p>
-                            <p><strong class="text-muted">Wind Speed:</strong> <span id="modalWind"></span> km/h</p>
-                        </div>
+<!-- Bootstrap Modal -->
+<div class="modal fade" id="aqiModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content rounded-4 shadow-lg">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="modalTitle"></h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-6">
+                        <p><strong class="text-muted">Status:</strong> <span id="modalStatus" class="badge"></span></p>
+                        <p><strong class="text-muted">Air Quality Index (AQI):</strong> <span id="modalAqi"></span></p>
+                        <p><strong class="text-muted">PM2.5:</strong> <span id="modalPm25"></span></p>
+                        <p><strong class="text-muted">PM10:</strong> <span id="modalPm10"></span></p>
+                    </div>
+                    <div class="col-6">
+                        <p><strong class="text-muted">Temperature:</strong> <span id="modalTemp"></span>°C</p>
+                        <p><strong class="text-muted">Humidity:</strong> <span id="modalHumidity"></span>%</p>
+                        <p><strong class="text-muted">Pressure:</strong> <span id="modalPressure"></span> hPa</p>
+                        <p><strong class="text-muted">Wind Speed:</strong> <span id="modalWind"></span> km/h</p>
                     </div>
                 </div>
+                <div id="inactiveMessage" class="alert alert-warning mt-3" style="display: none;">
+                    This sensor is currently inactive. No data is being collected.
+                </div>
+                <!-- Historical Data Table -->
+              <div id="historicalDataContainer" class="mt-4">
+    <h5>Historical Data</h5>
+  <div>
+    <label for="startDate">Start Date:</label>
+    <input type="date" id="startDate">
+    
+    <label for="endDate">End Date:</label>
+    <input type="date" id="endDate">
+    
+    <button onclick="filterByDate()">Filter</button>
+</div>
+
+<table id="historicalDataTable" class="table table-striped">
+    <thead>
+        <tr>
+            <th>Date</th>
+            <th>AQI</th>
+            <th>PM2.5</th>
+            <th>PM10</th>
+            <th>NO2</th>
+            <th>SO2</th>
+            <th>CO</th>
+            <th>O3</th>
+        </tr>
+    </thead>
+    <tbody id="historicalDataBody">
+        <!-- Historical data will be populated here -->
+    </tbody>
+</table>
+
+</div>
+
             </div>
         </div>
     </div>
+</div>
+
+<script>
 
 
-    <script>
-        document.addEventListener("DOMContentLoaded", function () {
-            var map = L.map('map').setView([6.913047, 79.84807], 12);
+    // Set the default date to the current date
+document.addEventListener("DOMContentLoaded", function() {
+    const today = new Date().toISOString().split('T')[0]; // Get the current date in YYYY-MM-DD format
+    document.getElementById("startDate").value = today;
+    document.getElementById("endDate").value = today;
+});
+  document.addEventListener("DOMContentLoaded", function () {
+    var map = L.map('map').setView([6.913047, 79.84807], 12);
 
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
 
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '&copy; OpenStreetMap contributors'
-            }).addTo(map);
-
-            fetch('/api/airquality')
-                .then(response => response.json())
-                .then(data => {
-                    data.locations.forEach(location => {
-                        var marker = L.marker([location.latitude, location.longitude]).addTo(map);
-                        marker.bindPopup(`<b>${location.name}</b><br>AQI: ${location.aqi}`).on('click', function () {
-                            openModal(location);
-                        });
-                    });
+    fetch('/api/airquality')
+        .then(response => response.json())
+        .then(data => {
+            data.locations.forEach(location => {
+                // Determine marker color based on air quality status
+                var markerColor = location.airQualityStatus === 'Active' ? 'green' : 'green';
+                var markerIcon = L.divIcon({
+                    className: 'custom-marker',
+                    html: `<div style="background-color: ${markerColor}; width: 20px; height: 20px; border-radius: 50%; border: 2px solid white;"></div>`
                 });
 
-            function openModal(location) {
-                document.getElementById("modalTitle").innerText = location.name;
-                document.getElementById("modalAqi").innerText = location.aqi;
-                document.getElementById("modalPm25").innerText = location.pm25;
-                document.getElementById("modalPm10").innerText = location.pm10;
-                document.getElementById("modalTemp").innerText = location.temp;
-                document.getElementById("modalHumidity").innerText = location.humidity;
-                document.getElementById("modalPressure").innerText = location.pressure;
-                document.getElementById("modalWind").innerText = location.wind;
-
-                var modal = new bootstrap.Modal(document.getElementById("aqiModal"));
-                modal.show();
-            }
+                var marker = L.marker([location.latitude, location.longitude], { icon: markerIcon }).addTo(map);
+                marker.bindPopup(`<b>${location.name}</b><br>Status: ${location.airQualityStatus}<br>AQI: ${location.aqi || 'N/A'}`)
+                      .on('click', function() {
+                          openModal(location);
+                      });
+            });
         });
-    </script>
+
+    function openModal(location) {
+        document.getElementById("modalTitle").innerText = location.name;
+
+        // Determine the status based on AQI value
+        const aqiStatus = GetAQIStatus(location.aqi);
+
+        // Set status badge
+        const statusBadge = document.getElementById("modalStatus");
+        statusBadge.innerText = aqiStatus; // Show status based on AQI
+        statusBadge.className = 'badge ' + getBadgeClass(aqiStatus);
+
+      
+
+        if (location.airQualityStatus) {
+            // Only show data if sensor is active
+            document.getElementById("modalAqi").innerText = location.aqi || 'N/A';
+            document.getElementById("modalPm25").innerText = location.pm25 || 'N/A';
+            document.getElementById("modalPm10").innerText = location.pm10 || 'N/A';
+            document.getElementById("modalTemp").innerText = location.temp || 'N/A';
+            document.getElementById("modalHumidity").innerText = location.humidity || 'N/A';
+            document.getElementById("modalPressure").innerText = location.pressure || 'N/A';
+            document.getElementById("modalWind").innerText = location.wind || 'N/A';
+        }
+
+fetch(`/api/airquality/history/${location.id}`)
+    .then(response => response.json())
+    .then(historyData => {
+        const historicalDataBody = document.getElementById("historicalDataBody");
+        historicalDataBody.innerHTML = ''; // Clear previous data
+
+        historyData.forEach(record => {
+            console.log('Record:', record);  // Log the entire record for debugging
+
+            // Check if the timestamp is valid before formatting
+            let formattedTimestamp = 'Invalid Date';
+            if (record.timestamp) {
+                formattedTimestamp = new Date(record.timestamp).toLocaleString();
+                if (formattedTimestamp === 'Invalid Date') {
+                    console.error('Invalid Timestamp:', record.timestamp);
+                }
+            }
+
+            // Create a new row for each record
+            const row = document.createElement("tr");
+            row.innerHTML = `
+                <td>${formattedTimestamp}</td>
+                <td>${record.aqi !== undefined ? record.aqi : 'N/A'}</td>
+                <td>${record.PM2_5 !== undefined ? record.PM2_5 : 'N/A'}</td>
+                <td>${record.PM10 !== undefined ? record.PM10 : 'N/A'}</td>
+                <td>${record.NO2 !== undefined ? record.NO2 : 'N/A'}</td>
+                <td>${record.SO2 !== undefined ? record.SO2 : 'N/A'}</td>
+                <td>${record.CO !== undefined ? record.CO : 'N/A'}</td>
+                <td>${record.O3 !== undefined ? record.O3 : 'N/A'}</td>
+            `;
+            historicalDataBody.appendChild(row);
+        });
+    })
+    .catch(error => {
+        console.error('Error fetching historical data:', error);
+        const historicalDataBody = document.getElementById("historicalDataBody");
+        historicalDataBody.innerHTML = '<tr><td colspan="8" class="text-center text-danger">Error fetching data. Please try again later.</td></tr>';
+    });
+
+
+
+        var modal = new bootstrap.Modal(document.getElementById("aqiModal"));
+        modal.show();
+    }
+
+
+
+
+    function GetAQIStatus(aqi) {
+        if (aqi <= 50) return "good";
+        if (aqi <= 100) return "Fair";
+        if (aqi <= 150) return "Moderate";
+        if (aqi <= 200) return "Poor";
+        if (aqi <= 300) return "Very Poor";
+        return "Hazardous";
+    }
+
+    function getBadgeClass(status) {
+        switch(status) {
+            case "Good":
+                return "bg-success";
+            case "Fair":
+                return "bg-info";
+            case "Moderate":
+                return "bg-warning";
+            case "Poor":
+            case "Very Poor":
+                return "bg-danger";
+            case "Hazardous":
+                return "bg-dark";
+            default:
+                return "bg-secondary";
+        }
+    }
+});
+
+      
+
+</script>
+
+<style>
+    .custom-marker {
+        background: transparent;
+        border: none;
+    }
+</style>
 
     <!-- Features Section -->
     <section class="py-5">
