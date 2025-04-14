@@ -18,6 +18,8 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
     <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <style>
         :root {
@@ -335,56 +337,125 @@
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <div class="row">
-                    <div class="col-6">
-                        <p><strong class="text-muted">Status:</strong> <span id="modalStatus" class="badge"></span></p>
-                        <p><strong class="text-muted">Air Quality Index (AQI):</strong> <span id="modalAqi"></span></p>
-                        <p><strong class="text-muted">PM2.5:</strong> <span id="modalPm25"></span></p>
-                        <p><strong class="text-muted">PM10:</strong> <span id="modalPm10"></span></p>
+                <!-- Tab navigation -->
+                <ul class="nav nav-tabs mb-3" id="modalTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="data-tab" data-bs-toggle="tab" data-bs-target="#data-content" type="button" role="tab" aria-selected="true">Sensor Data</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="charts-tab" data-bs-toggle="tab" data-bs-target="#charts-content" type="button" role="tab" aria-selected="false">Analytics</button>
+                    </li>
+                </ul>
+                
+                <!-- Tab content -->
+                <div class="tab-content" id="modalTabContent">
+                    <!-- Data tab -->
+                    <div class="tab-pane fade show active" id="data-content" role="tabpanel">
+                        <div class="row">
+                            <div class="col-6">
+                                <p><strong class="text-muted">Status:</strong> <span id="modalStatus" class="badge"></span></p>
+                                <p><strong class="text-muted">Air Quality Index (AQI):</strong> <span id="modalAqi"></span></p>
+                                <p><strong class="text-muted">PM2.5:</strong> <span id="modalPm25"></span></p>
+                                <p><strong class="text-muted">PM10:</strong> <span id="modalPm10"></span></p>
+                            </div>
+                            <div class="col-6">
+                                <p><strong class="text-muted">Temperature:</strong> <span id="modalTemp"></span>°C</p>
+                                <p><strong class="text-muted">Humidity:</strong> <span id="modalHumidity"></span>%</p>
+                                <p><strong class="text-muted">Pressure:</strong> <span id="modalPressure"></span> hPa</p>
+                                <p><strong class="text-muted">Wind Speed:</strong> <span id="modalWind"></span> km/h</p>
+                            </div>
+                        </div>
+                        <div id="inactiveMessage" class="alert alert-warning mt-3" style="display: none;">
+                            This sensor is currently inactive. No data is being collected.
+                        </div>
+                        <!-- Historical Data Table -->
+                        <div id="historicalDataContainer" class="mt-4">
+                            <h5>Historical Data</h5>
+                            <div class="mb-3">
+                                <div class="row g-2 align-items-center">
+                                    <div class="col-md-4">
+                                        <label for="startDate" class="form-label">Start Date:</label>
+                                        <input type="date" id="startDate" class="form-control">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="endDate" class="form-label">End Date:</label>
+                                        <input type="date" id="endDate" class="form-control">
+                                    </div>
+                                    <div class="col-md-4 d-flex align-items-end">
+                                        <button onclick="filterByDate()" class="btn btn-primary">Filter</button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="table-responsive">
+                                <table id="historicalDataTable" class="table table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>Timestamp</th>
+                                            <th>AQI</th>
+                                            <th>PM2.5</th>
+                                            <th>PM10</th>
+                                            <th>NO₂</th>
+                                            <th>SO₂</th>
+                                            <th>CO</th>
+                                            <th>O₃</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="historicalDataBody">
+                                        <!-- Data will be populated via JavaScript -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
                     </div>
-                    <div class="col-6">
-                        <p><strong class="text-muted">Temperature:</strong> <span id="modalTemp"></span>°C</p>
-                        <p><strong class="text-muted">Humidity:</strong> <span id="modalHumidity"></span>%</p>
-                        <p><strong class="text-muted">Pressure:</strong> <span id="modalPressure"></span> hPa</p>
-                        <p><strong class="text-muted">Wind Speed:</strong> <span id="modalWind"></span> km/h</p>
+                    
+                    <!-- Charts tab -->
+                    <div class="tab-pane fade" id="charts-content" role="tabpanel">
+                        <div class="chart-controls mb-3">
+                            <div class="row g-2 align-items-center">
+                                <div class="col-md-3">
+                                    <label for="chartMetric" class="form-label">Metric:</label>
+                                    <select id="chartMetric" class="form-select">
+                                        <option value="AQI">Air Quality Index</option>
+                                        <option value="PM2_5">PM2.5</option>
+                                        <option value="PM10">PM10</option>
+                                        <option value="NO2">NO2</option>
+                                        <option value="SO2">SO2</option>
+                                        <option value="CO">CO</option>
+                                        <option value="O3">O3</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label for="chartPeriod" class="form-label">Period:</label>
+                                    <select id="chartPeriod" class="form-select" onchange="toggleCustomDateInputs()">
+                                        <option value="day">Last 24 Hours</option>
+                                        <option value="week">Last Week</option>
+                                        <option value="month">Last Month</option>
+                                        <option value="custom">Custom Range</option>
+                                    </select>
+                                </div>
+                                <div id="chartCustomDates" class="col-md-4" style="display: none;">
+                                    <div class="row g-2">
+                                        <div class="col-6">
+                                            <input type="date" id="chartStartDate" class="form-control form-control-sm">
+                                        </div>
+                                        <div class="col-6">
+                                            <input type="date" id="chartEndDate" class="form-control form-control-sm">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-2 d-flex align-items-end">
+                                    <button id="updateChart" class="btn btn-primary">Update Chart</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="chart-container" style="position: relative; height:400px; width:100%">
+                            <canvas id="analyticsChart"></canvas>
+                        </div>
+                        <div id="chartNoData" class="alert alert-info mt-3" style="display: none;">
+                            No data available for the selected time period.
+                        </div>
                     </div>
                 </div>
-                <div id="inactiveMessage" class="alert alert-warning mt-3" style="display: none;">
-                    This sensor is currently inactive. No data is being collected.
-                </div>
-                <!-- Historical Data Table -->
-              <div id="historicalDataContainer" class="mt-4">
-    <h5>Historical Data</h5>
-  <div>
-    <label for="startDate">Start Date:</label>
-    <input type="date" id="startDate">
-    
-    <label for="endDate">End Date:</label>
-    <input type="date" id="endDate">
-    
-    <button onclick="filterByDate()">Filter</button>
-</div>
-
-<table id="historicalDataTable" class="table table-striped">
-    <thead>
-        <tr>
-            <th>Date</th>
-            <th>AQI</th>
-            <th>PM2.5</th>
-            <th>PM10</th>
-            <th>NO2</th>
-            <th>SO2</th>
-            <th>CO</th>
-            <th>O3</th>
-        </tr>
-    </thead>
-    <tbody id="historicalDataBody">
-        <!-- Historical data will be populated here -->
-    </tbody>
-</table>
-
-</div>
-
             </div>
         </div>
     </div>
@@ -398,6 +469,29 @@ document.addEventListener("DOMContentLoaded", function() {
     const today = new Date().toISOString().split('T')[0]; // Get the current date in YYYY-MM-DD format
     document.getElementById("startDate").value = today;
     document.getElementById("endDate").value = today;
+    
+    // Initialize empty historical data table with headers
+    const historicalDataTable = document.getElementById("historicalDataTable");
+    if (historicalDataTable && !historicalDataTable.querySelector('thead')) {
+        const thead = document.createElement('thead');
+        thead.innerHTML = `
+            <tr>
+                <th>Timestamp</th>
+                <th>AQI</th>
+                <th>PM2.5</th>
+                <th>PM10</th>
+                <th>NO₂</th>
+                <th>SO₂</th>
+                <th>CO</th>
+                <th>O₃</th>
+            </tr>
+        `;
+        historicalDataTable.appendChild(thead);
+        
+        const tbody = document.createElement('tbody');
+        tbody.id = 'historicalDataBody';
+        historicalDataTable.appendChild(tbody);
+    }
 });
   document.addEventListener("DOMContentLoaded", function () {
     var map = L.map('map').setView([6.913047, 79.84807], 12);
@@ -425,8 +519,13 @@ document.addEventListener("DOMContentLoaded", function() {
             });
         });
 
+    let currentSensorId = null;
+    let analyticsChart = null;
+    let historicalData = [];
+
     function openModal(location) {
         document.getElementById("modalTitle").innerText = location.name;
+        currentSensorId = location.id; // Store the current sensor ID
 
         // Determine the status based on AQI value
         const aqiStatus = GetAQIStatus(location.aqi);
@@ -435,8 +534,6 @@ document.addEventListener("DOMContentLoaded", function() {
         const statusBadge = document.getElementById("modalStatus");
         statusBadge.innerText = aqiStatus; // Show status based on AQI
         statusBadge.className = 'badge ' + getBadgeClass(aqiStatus);
-
-      
 
         if (location.airQualityStatus) {
             // Only show data if sensor is active
@@ -449,53 +546,352 @@ document.addEventListener("DOMContentLoaded", function() {
             document.getElementById("modalWind").innerText = location.wind || 'N/A';
         }
 
-fetch(`/api/airquality/history/${location.id}`)
-    .then(response => response.json())
-    .then(historyData => {
+        // Fetch historical data
+        fetchHistoricalData(location.id);
+
+        var modal = new bootstrap.Modal(document.getElementById("aqiModal"));
+        modal.show();
+        
+        // Initialize tab behavior
+        document.getElementById('charts-tab').addEventListener('click', function() {
+            if (analyticsChart === null) {
+                createChart();
+            }
+        });
+        
+        // Set up chart update button
+        document.getElementById('updateChart').addEventListener('click', createChart);
+    }
+
+    function fetchHistoricalData(sensorId) {
+        // Show loading indicator
+        const historicalDataBody = document.getElementById("historicalDataBody");
+        historicalDataBody.innerHTML = '<tr><td colspan="8" class="text-center">Loading data...</td></tr>';
+        
+        // Also reset chart no-data message
+        document.getElementById('chartNoData').style.display = 'none';
+        
+        fetch(`/api/airquality/history/${sensorId}`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (!data || data.length === 0) {
+                    historicalDataBody.innerHTML = '<tr><td colspan="8" class="text-center">No historical data available for this location.</td></tr>';
+                    document.getElementById('chartNoData').style.display = 'block';
+                    document.getElementById('chartNoData').innerText = 'No historical data available for this location.';
+                    return;
+                }
+                
+                // Debug output - check what's in your data
+                console.log("API Response Data:", data);
+                
+                // Check data format for first item
+                if (data.length > 0) {
+                    console.log("Sample data item:", data[0]);
+                    console.log("Sample timestamp:", data[0].timestamp);
+                    console.log("Sample AQI:", data[0].aqi);
+                    console.log("Sample PM2.5:", data[0].PM2_5);
+                }
+                
+                historicalData = data; // Store the full history data
+                
+                // Populate the table
+                updateHistoricalDataTable(data);
+            })
+            .catch(error => {
+                console.error('Error fetching historical data:', error);
+                historicalDataBody.innerHTML = `<tr><td colspan="8" class="text-center text-danger">Error fetching data: ${error.message}</td></tr>`;
+                
+                // Also show error in the chart tab
+                document.getElementById('chartNoData').style.display = 'block';
+                document.getElementById('chartNoData').innerText = `Error fetching data: ${error.message}`;
+            });
+    }
+
+    function updateHistoricalDataTable(data) {
         const historicalDataBody = document.getElementById("historicalDataBody");
         historicalDataBody.innerHTML = ''; // Clear previous data
 
-        historyData.forEach(record => {
-            console.log('Record:', record);  // Log the entire record for debugging
+        // Check if table should show "no data" message
+        if (!data || data.length === 0) {
+            historicalDataBody.innerHTML = '<tr><td colspan="8" class="text-center">No data available for the selected period.</td></tr>';
+            return;
+        }
 
+        data.forEach(record => {
             // Check if the timestamp is valid before formatting
             let formattedTimestamp = 'Invalid Date';
             if (record.timestamp) {
-                formattedTimestamp = new Date(record.timestamp).toLocaleString();
+                const date = new Date(record.timestamp);
+                formattedTimestamp = date.toLocaleString();
                 if (formattedTimestamp === 'Invalid Date') {
                     console.error('Invalid Timestamp:', record.timestamp);
                 }
             }
 
+            // Format numeric values with 2 decimal places when present
+            const formatValue = (value) => {
+                if (value === undefined || value === null) return 'N/A';
+                return typeof value === 'number' ? value.toFixed(2) : value;
+            };
+
             // Create a new row for each record
             const row = document.createElement("tr");
+            
+            // Apply conditional styling based on AQI value
+            if (record.aqi !== undefined) {
+                const aqiStatus = GetAQIStatus(record.aqi);
+                row.className = getBadgeClass(aqiStatus).replace('bg-', 'table-');
+            }
+            
             row.innerHTML = `
                 <td>${formattedTimestamp}</td>
                 <td>${record.aqi !== undefined ? record.aqi : 'N/A'}</td>
-                <td>${record.PM2_5 !== undefined ? record.PM2_5 : 'N/A'}</td>
-                <td>${record.PM10 !== undefined ? record.PM10 : 'N/A'}</td>
-                <td>${record.NO2 !== undefined ? record.NO2 : 'N/A'}</td>
-                <td>${record.SO2 !== undefined ? record.SO2 : 'N/A'}</td>
-                <td>${record.CO !== undefined ? record.CO : 'N/A'}</td>
-                <td>${record.O3 !== undefined ? record.O3 : 'N/A'}</td>
+                <td>${formatValue(record.PM2_5)}</td>
+                <td>${formatValue(record.PM10)}</td>
+                <td>${formatValue(record.NO2)}</td>
+                <td>${formatValue(record.SO2)}</td>
+                <td>${formatValue(record.CO)}</td>
+                <td>${formatValue(record.O3)}</td>
             `;
             historicalDataBody.appendChild(row);
         });
-    })
-    .catch(error => {
-        console.error('Error fetching historical data:', error);
-        const historicalDataBody = document.getElementById("historicalDataBody");
-        historicalDataBody.innerHTML = '<tr><td colspan="8" class="text-center text-danger">Error fetching data. Please try again later.</td></tr>';
-    });
-
-
-
-        var modal = new bootstrap.Modal(document.getElementById("aqiModal"));
-        modal.show();
     }
 
+    function createChart() {
+        const metric = document.getElementById('chartMetric').value;
+        const period = document.getElementById('chartPeriod').value;
+        
+        // Filter data based on selected period
+        const now = new Date();
+        let startDate;
+        let endDate = new Date(now);
+        
+        if (period === 'custom') {
+            // Get custom date range
+            const startDateStr = document.getElementById('chartStartDate').value;
+            const endDateStr = document.getElementById('chartEndDate').value;
+            
+            if (!startDateStr || !endDateStr) {
+                alert('Please select both start and end dates for custom range');
+                return;
+            }
+            
+            startDate = new Date(startDateStr);
+            endDate = new Date(endDateStr);
+            endDate.setHours(23, 59, 59, 999); // Set to end of day
+        } else {
+            // Use predefined period
+            switch(period) {
+                case 'day':
+                    startDate = new Date(now);
+                    startDate.setDate(now.getDate() - 1);
+                    break;
+                case 'week':
+                    startDate = new Date(now);
+                    startDate.setDate(now.getDate() - 7);
+                    break;
+                case 'month':
+                    startDate = new Date(now);
+                    startDate.setMonth(now.getMonth() - 1);
+                    break;
+            }
+        }
+        
+        // Continue with the existing filter logic
+        const filteredData = historicalData.filter(record => {
+            try {
+                const recordDate = new Date(record.timestamp);
+                return recordDate >= startDate && recordDate <= endDate;
+            } catch (e) {
+                console.error("Invalid date format:", record.timestamp);
+                return false;
+            }
+        });
+        
+        // Rest of the function remains the same...
+        // ...
+        
+        // Sort data by timestamp (oldest first)
+        filteredData.sort((a, b) => {
+            try {
+                return new Date(a.timestamp) - new Date(b.timestamp);
+            } catch (e) {
+                return 0;
+            }
+        });
+        
+        // Show message if no data available
+        if (filteredData.length === 0) {
+            document.getElementById('chartNoData').style.display = 'block';
+            document.getElementById('chartNoData').innerText = 'No data available for the selected time period.';
+            // Clear any existing chart
+            if (analyticsChart) {
+                analyticsChart.destroy();
+                analyticsChart = null;
+            }
+            return;
+        }
+        
+        // Hide no data message
+        document.getElementById('chartNoData').style.display = 'none';
+        
+        updateChart(filteredData, metric);
+    }
 
+    function updateChart(filteredData, metric) {
+        // Get the current period value since it's not passed to this function
+        const period = document.getElementById('chartPeriod').value;
+        
+        // Format data for Chart.js
+        const labels = filteredData.map(record => {
+            try {
+                const date = new Date(record.timestamp);
+                // Format date more compactly for chart labels
+                return date.toLocaleString(undefined, {
+                    month: 'short',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+            } catch (e) {
+                return 'Invalid Date';
+            }
+        });
+        
+        // Rest of the function remains the same
+        const data = filteredData.map(record => {
+            // Handle property names with different cases
+            switch(metric) {
+                case 'AQI': return record.aqi;
+                case 'PM2_5': return record.PM2_5;
+                case 'PM10': return record.PM10;
+                case 'NO2': return record.NO2;
+                case 'SO2': return record.SO2;
+                case 'CO': return record.CO;
+                case 'O3': return record.O3;
+                default: return null;
+            }
+        });
+        
+        // Create or update chart
+        const ctx = document.getElementById('analyticsChart').getContext('2d');
+        
+        // Destroy previous chart instance if it exists
+        if (analyticsChart) {
+            analyticsChart.destroy();
+        }
+        
+        // Get metric label
+        const metricLabels = {
+            'AQI': 'Air Quality Index',
+            'PM2_5': 'PM2.5 (µg/m³)',
+            'PM10': 'PM10 (µg/m³)',
+            'NO2': 'NO₂ (ppb)',
+            'SO2': 'SO₂ (ppb)',
+            'CO': 'CO (ppm)',
+            'O3': 'O₃ (ppb)'
+        };
+        
+        // Get appropriate chart colors based on metric
+        let borderColor = 'rgb(67, 97, 238)';
+        let backgroundColor = 'rgba(67, 97, 238, 0.1)';
+        
+        // Use specific colors for AQI to match severity
+        if (metric === 'AQI') {
+            borderColor = 'rgb(255, 99, 132)';
+            backgroundColor = 'rgba(255, 99, 132, 0.1)';
+        }
+        
+        // Create chart
+        analyticsChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: metricLabels[metric],
+                    data: data,
+                    borderColor: borderColor,
+                    backgroundColor: backgroundColor,
+                    fill: true,
+                    tension: 0.4,
+                    pointRadius: 3,
+                    pointHoverRadius: 5
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        ticks: {
+                            maxTicksLimit: 8, // Limit number of ticks for readability
+                            maxRotation: 45,
+                            minRotation: 45
+                        }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: metricLabels[metric]
+                        }
+                    }
+                },
+                plugins: {
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false,
+                        callbacks: {
+                            title: function(tooltipItems) {
+                                // Format the tooltip title with full date information
+                                const index = tooltipItems[0].dataIndex;
+                                const timestamp = filteredData[index].timestamp;
+                                return new Date(timestamp).toLocaleString();
+                            }
+                        }
+                    },
+                    legend: {
+                        position: 'top'
+                    },
+                    title: {
+                        display: true,
+                        text: `${metricLabels[metric]} - ${getPeriodText(period)}`
+                    }
+                }
+            }
+        });
+    }
 
+    // Add this helper function to get period text
+    function getPeriodText(period) {
+        switch(period) {
+            case 'day': return 'Last 24 Hours';
+            case 'week': return 'Last Week';
+            case 'month': return 'Last Month';
+            case 'custom': return 'Custom Range';
+            default: return '';
+        }
+    }
+
+    function filterByDate() {
+        const startDate = new Date(document.getElementById('startDate').value);
+        const endDate = new Date(document.getElementById('endDate').value);
+        endDate.setHours(23, 59, 59, 999); // Set to end of day
+        
+        // Filter data by date range
+        const filteredData = historicalData.filter(record => {
+            const recordDate = new Date(record.timestamp);
+            return recordDate >= startDate && recordDate <= endDate;
+        });
+        
+        // Update table with filtered data
+        updateHistoricalDataTable(filteredData);
+    }
 
     function GetAQIStatus(aqi) {
         if (aqi <= 50) return "good";
@@ -523,6 +919,26 @@ fetch(`/api/airquality/history/${location.id}`)
                 return "bg-secondary";
         }
     }
+
+    function toggleCustomDateInputs() {
+        const period = document.getElementById('chartPeriod').value;
+        const customDatesDiv = document.getElementById('chartCustomDates');
+        
+        if (period === 'custom') {
+            customDatesDiv.style.display = 'block';
+            // Set default dates if not already set
+            if (!document.getElementById('chartStartDate').value) {
+                const today = new Date();
+                const lastWeek = new Date();
+                lastWeek.setDate(today.getDate() - 7);
+                
+                document.getElementById('chartStartDate').value = lastWeek.toISOString().split('T')[0];
+                document.getElementById('chartEndDate').value = today.toISOString().split('T')[0];
+            }
+        } else {
+            customDatesDiv.style.display = 'none';
+        }
+    }
 });
 
       
@@ -533,6 +949,27 @@ fetch(`/api/airquality/history/${location.id}`)
     .custom-marker {
         background: transparent;
         border: none;
+    }
+    
+    .chart-container {
+        position: relative;
+        height: 400px;
+        width: 100%;
+    }
+    
+    @@media (max-width: 768px) {
+        .chart-container {
+            height: 300px;
+        }
+        
+        .chart-controls .row {
+            flex-direction: column;
+        }
+        
+        .chart-controls .col-md-3 {
+            width: 100%;
+            margin-bottom: 10px;
+        }
     }
 </style>
 
@@ -720,6 +1157,7 @@ fetch(`/api/airquality/history/${location.id}`)
             </div>
         </div>
     </footer>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
 
