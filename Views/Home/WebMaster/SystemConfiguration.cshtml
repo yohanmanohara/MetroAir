@@ -4,14 +4,103 @@
 }
 
 <div class="container mt-4">
+    @Html.AntiForgeryToken()
     <h2 class="mb-4">System Configuration</h2>
 
-    <!-- Database Backup Card -->
+    <!-- Status alerts will appear here -->
+    <div id="alertsContainer"></div>
+
+    <!-- Database Management Section -->
     <div class="card shadow-sm mb-4">
-        <div class="card-header bg-primary text-white">
+        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
             <h5 class="mb-0">Database Management</h5>
+            <span class="badge bg-light text-primary" id="dbStatusBadge">Connected</span>
         </div>
         <div class="card-body">
+            <!-- Database Info -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <h6 class="border-bottom pb-2 mb-3">Database Information</h6>
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <div class="card bg-light h-100">
+                                <div class="card-body">
+                                    <h6 class="card-title text-muted">Database Name</h6>
+                                    <p class="card-text fs-5" id="dbName">Loading...</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card bg-light h-100">
+                                <div class="card-body">
+                                    <h6 class="card-title text-muted">Size</h6>
+                                    <p class="card-text fs-5" id="dbSize">Loading...</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card bg-light h-100">
+                                <div class="card-body">
+                                    <h6 class="card-title text-muted">Last Backup</h6>
+                                    <p class="card-text fs-5" id="lastBackup">Never</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Backup Settings -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <h6 class="border-bottom pb-2 mb-3">Backup Settings</h6>
+                    <form id="backupSettingsForm" class="mb-3">
+                        <div class="row g-3">
+                            <div class="col-md-8">
+                                <label for="backupLocation" class="form-label">Backup Location</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-folder"></i></span>
+                                    <input type="text" class="form-control" id="backupLocation" 
+                                           placeholder="Default: Application Backups folder" 
+                                           value="">
+                                    <button class="btn btn-outline-secondary" type="button" id="useDefaultLocationBtn">
+                                        Default
+                                    </button>
+                                    <button class="btn btn-outline-secondary" type="button" id="sqlServerLocationBtn">
+                                        SQL Server Path
+                                    </button>
+                                </div>
+                                <div class="form-text">
+                                    Use a path where SQL Server has write permissions. 
+                                    <a href="#" data-bs-toggle="modal" data-bs-target="#permissionsHelpModal">
+                                        <i class="fas fa-info-circle"></i> Help with permissions
+                                    </a>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="backupRetention" class="form-label">Backup Retention</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-calendar"></i></span>
+                                    <select class="form-select" id="backupRetention">
+                                        <option value="0">Keep all backups</option>
+                                        <option value="5">Keep 5 most recent</option>
+                                        <option value="10" selected>Keep 10 most recent</option>
+                                        <option value="30">Keep 30 most recent</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mt-3 text-end">
+                            <button type="submit" class="btn btn-primary" id="saveBackupSettingsBtn">
+                                <i class="fas fa-save me-1"></i> Save Settings
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Backup and Restore Actions -->
+            <h6 class="border-bottom pb-2 mb-3">Backup & Restore Actions</h6>
             <div class="row">
                 <div class="col-md-6">
                     <div class="d-flex align-items-center mb-3">
@@ -30,34 +119,59 @@
                             <h6 class="mb-0">Restore Database</h6>
                             <small class="text-muted">Restore from a previous backup file</small>
                         </div>
-                        <button id="restoreBackupBtn" class="btn btn-outline-secondary ms-3" disabled>
+                        <button id="restoreBackupBtn" class="btn btn-outline-warning ms-3" disabled>
                             <i class="fas fa-undo me-1"></i> Restore
                         </button>
                     </div>
                 </div>
             </div>
 
-            <!-- Backup List -->
-            <div class="mt-4">
-                <h6>Available Backups</h6>
-                <div class="table-responsive">
-                    <table class="table table-sm table-hover" id="backupTable">
-                        <thead>
-                            <tr>
-                                <th>File Name</th>
-                                <th>Date</th>
-                                <th>Size</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="backupListBody">
-                            <!-- Will be populated by JavaScript -->
-                            <tr>
-                                <td colspan="4" class="text-center">Loading backups...</td>
-                            </tr>
-                        </tbody>
-                    </table>
+            <!-- Upload Backup File -->
+            <div class="row mt-3 mb-4">
+                <div class="col-12">
+                    <div class="card border-dashed p-3">
+                        <div class="d-flex align-items-center">
+                            <div class="flex-grow-1">
+                                <h6 class="mb-0">Upload Backup File</h6>
+                                <small class="text-muted">Import an external backup file (.bak)</small>
+                            </div>
+                            <div class="ms-3">
+                                <label for="backupFileUpload" class="btn btn-outline-secondary">
+                                    <i class="fas fa-upload me-1"></i> Choose File
+                                </label>
+                                <input type="file" id="backupFileUpload" class="d-none" accept=".bak">
+                            </div>
+                        </div>
+                        <div id="uploadProgressContainer" class="mt-3 d-none">
+                            <div class="progress mb-2">
+                                <div id="uploadProgressBar" class="progress-bar progress-bar-striped progress-bar-animated"
+                                     role="progressbar" style="width: 0%"></div>
+                            </div>
+                            <div id="uploadStatusText" class="text-center small">Uploading file...</div>
+                        </div>
+                    </div>
                 </div>
+            </div>
+
+            <!-- Backup List -->
+            <h6 class="border-bottom pb-2 mb-3">Available Backups</h6>
+            <div class="table-responsive">
+                <table class="table table-sm table-hover" id="backupTable">
+                    <thead>
+                        <tr>
+                            <th>File Name</th>
+                            <th>Date</th>
+                            <th>Size</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="backupListBody">
+                        <!-- Will be populated by JavaScript -->
+                        <tr>
+                            <td colspan="4" class="text-center">Loading backups...</td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
@@ -98,14 +212,138 @@
     </div>
 </div>
 
+<!-- Restore Confirmation Modal -->
+<div class="modal fade" id="restoreModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-warning text-white">
+                <h5 class="modal-title">Restore Database</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>Warning:</strong> Restoring a database will overwrite all current data. This action cannot be undone.
+                </div>
+                <p>Are you sure you want to restore the database from the backup: <strong id="restoreFileName"></strong>?</p>
+                
+                <div class="form-check mb-3">
+                    <input class="form-check-input" type="checkbox" id="confirmRestoreCheckbox">
+                    <label class="form-check-label" for="confirmRestoreCheckbox">
+                        I understand this will replace all current data
+                    </label>
+                </div>
+                
+                <div id="restoreProgressContainer" class="d-none mt-3">
+                    <div class="progress mb-3">
+                        <div id="restoreProgressBar" class="progress-bar progress-bar-striped progress-bar-animated bg-warning" 
+                             role="progressbar" style="width: 0%"></div>
+                    </div>
+                    <div id="restoreStatusText" class="text-center">Preparing to restore...</div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-warning" id="confirmRestoreBtn" disabled>
+                    <i class="fas fa-undo me-1"></i> Restore Database
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Permissions Help Modal -->
+<div class="modal fade" id="permissionsHelpModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title">Database Backup Permissions Help</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <h6 class="mb-3">Understanding Backup Permissions</h6>
+                <p>
+                    When creating database backups, the SQL Server service account needs write permissions to the backup location.
+                    The "Access denied" error means that SQL Server cannot write to the specified directory.
+                </p>
+                
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>Common Issue:</strong> SQL Server runs under a service account (often "NT SERVICE\MSSQLSERVER" or "NETWORK SERVICE") 
+                    which may not have permissions to write to the application directories.
+                </div>
+                
+                <h6 class="mt-4 mb-3">Solutions:</h6>
+                <ol>
+                    <li>
+                        <strong>Use SQL Server's default backup location:</strong>
+                        <p>Click the "SQL Server Path" button to use SQL Server's built-in backup directory where permissions are already set correctly.</p>
+                    </li>
+                    <li>
+                        <strong>Grant permissions to the backup directory:</strong>
+                        <p>
+                            If you need to use a custom location, ensure the SQL Server service account has write permissions to that folder:
+                            <ol type="a">
+                                <li>Right-click on the folder → Properties → Security</li>
+                                <li>Click "Edit" → "Add" and enter the SQL Server service account name</li>
+                                <li>Grant "Modify" and "Write" permissions</li>
+                            </ol>
+                        </p>
+                    </li>
+                    <li>
+                        <strong>Create the backup folder using SQL Server:</strong>
+                        <p>
+                            If you're an administrator, you can use SQL Server Management Studio to create backups directly,
+                            which will create folders with the correct permissions.
+                        </p>
+                    </li>
+                </ol>
+                
+                <h6 class="mt-4 mb-3">SQL Server Service Account:</h6>
+                <p>To find which account your SQL Server instance is running under:</p>
+                <ol>
+                    <li>Open Services (services.msc)</li>
+                    <li>Find "SQL Server (MSSQLSERVER)" or your named instance</li>
+                    <li>Right-click → Properties → "Log On" tab</li>
+                </ol>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 @section Scripts {
     <script>
         document.addEventListener("DOMContentLoaded", function() {
             const backupModal = new bootstrap.Modal('#backupModal');
+            const restoreModal = new bootstrap.Modal('#restoreModal');
             let currentBackupFileName = '';
+            let selectedRestoreFileName = '';
+            let selectedBackupRow = null;
+            let defaultBackupLocation = 'd:\\dev\\csharp\\metroair\\Backups';
+            let sqlServerBackupLocation = 'C:\\Program Files\\Microsoft SQL Server\\MSSQL16.MSSQLSERVER\\MSSQL\\Backup';
 
-            // Load available backups
+            // Load database info and available backups
+            loadDatabaseInfo();
             loadBackupList();
+            loadBackupSettings();
+
+            // Backup settings buttons
+            document.getElementById('useDefaultLocationBtn').addEventListener('click', function() {
+                document.getElementById('backupLocation').value = defaultBackupLocation;
+            });
+
+            document.getElementById('sqlServerLocationBtn').addEventListener('click', function() {
+                document.getElementById('backupLocation').value = sqlServerBackupLocation;
+            });
+
+            // Save backup settings
+            document.getElementById('backupSettingsForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                saveBackupSettings();
+            });
 
             // Create backup button click handler
             document.getElementById('createBackupBtn').addEventListener('click', function() {
@@ -118,6 +356,215 @@
                     window.location.href = `/Home/SystemConfiguration/DownloadBackup?fileName=${encodeURIComponent(currentBackupFileName)}`;
                 }
             });
+
+            // Confirm restore checkbox handler
+            document.getElementById('confirmRestoreCheckbox').addEventListener('change', function() {
+                document.getElementById('confirmRestoreBtn').disabled = !this.checked;
+            });
+
+            // Confirm restore button click handler
+            document.getElementById('confirmRestoreBtn').addEventListener('click', function() {
+                if (selectedRestoreFileName) {
+                    startRestoreProcess(selectedRestoreFileName);
+                }
+            });
+
+            // Restore button click handler
+            document.getElementById('restoreBackupBtn').addEventListener('click', function() {
+                if (document.querySelectorAll('#backupTable tbody tr').length > 0) {
+                    const latestBackup = document.querySelector('#backupTable tbody tr:first-child .restore-btn');
+                    if (latestBackup) {
+                        latestBackup.click();
+                    }
+                }
+            });
+
+            // File upload handler
+            document.getElementById('backupFileUpload').addEventListener('change', function(e) {
+                if (this.files.length > 0) {
+                    uploadBackupFile(this.files[0]);
+                }
+            });
+
+            // Function to load backup settings
+            function loadBackupSettings() {
+                fetch('/Home/SystemConfiguration/GetBackupSettings', {
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Failed to fetch backup settings');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    document.getElementById('backupLocation').value = data.backupLocation || defaultBackupLocation;
+                    
+                    const retentionSelect = document.getElementById('backupRetention');
+                    if (data.retentionCount) {
+                        // Find and select the matching option or default to the first option
+                        const options = Array.from(retentionSelect.options);
+                        const matchingOption = options.find(option => parseInt(option.value) === data.retentionCount);
+                        if (matchingOption) {
+                            matchingOption.selected = true;
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading backup settings:', error);
+                    // Use defaults if settings can't be loaded
+                });
+            }
+
+            // Function to save backup settings
+            function saveBackupSettings() {
+                const backupLocation = document.getElementById('backupLocation').value;
+                const retentionCount = parseInt(document.getElementById('backupRetention').value);
+                
+                fetch('/Home/SystemConfiguration/SaveBackupSettings', {
+                    method: 'POST',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                    },
+                    body: JSON.stringify({
+                        backupLocation: backupLocation,
+                        retentionCount: retentionCount
+                    })
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Failed to save backup settings');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.success) {
+                        showAlert('Backup settings saved successfully', 'success');
+                    } else {
+                        throw new Error(data.message || 'Failed to save settings');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error saving backup settings:', error);
+                    showAlert(`Error saving settings: ${error.message}`, 'danger');
+                });
+            }
+
+            // Function to load database information
+            function loadDatabaseInfo() {
+                fetch('/Home/SystemConfiguration/GetDatabaseInfo', {
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Failed to fetch database info');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    document.getElementById('dbName').textContent = data.name || 'Unknown';
+                    document.getElementById('dbSize').textContent = formatFileSize(data.size) || 'Unknown';
+                    document.getElementById('dbStatusBadge').textContent = data.status || 'Unknown';
+                    
+                    if (data.lastBackupDate) {
+                        document.getElementById('lastBackup').textContent = new Date(data.lastBackupDate).toLocaleString();
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading database info:', error);
+                    document.getElementById('dbName').textContent = 'Error loading';
+                    document.getElementById('dbSize').textContent = 'Error loading';
+                    document.getElementById('dbStatusBadge').textContent = 'Error';
+                    document.getElementById('dbStatusBadge').className = 'badge bg-danger';
+                });
+            }
+
+            // Function to upload backup file
+            function uploadBackupFile(file) {
+                // Show progress
+                const progressContainer = document.getElementById('uploadProgressContainer');
+                const progressBar = document.getElementById('uploadProgressBar');
+                const statusText = document.getElementById('uploadStatusText');
+                
+                progressContainer.classList.remove('d-none');
+                progressBar.style.width = '0%';
+                statusText.textContent = 'Uploading file...';
+                
+                const formData = new FormData();
+                formData.append('backupFile', file);
+                
+                const xhr = new XMLHttpRequest();
+                
+                // Track upload progress
+                xhr.upload.addEventListener('progress', function(e) {
+                    if (e.lengthComputable) {
+                        const percentComplete = (e.loaded / e.total) * 100;
+                        progressBar.style.width = percentComplete + '%';
+                        statusText.textContent = `Uploading: ${Math.round(percentComplete)}%`;
+                    }
+                });
+                
+                xhr.addEventListener('load', function(e) {
+                    if (xhr.status === 200) {
+                        try {
+                            const response = JSON.parse(xhr.responseText);
+                            if (response.success) {
+                                progressBar.classList.remove('bg-danger');
+                                progressBar.classList.add('bg-success');
+                                statusText.textContent = 'Upload successful!';
+                                showAlert('Backup file uploaded successfully', 'success');
+                                loadBackupList();
+                                
+                                // Reset file input
+                                document.getElementById('backupFileUpload').value = '';
+                                
+                                // Hide progress after delay
+                                setTimeout(() => {
+                                    progressContainer.classList.add('d-none');
+                                }, 2000);
+                            } else {
+                                throw new Error(response.message || 'Upload failed');
+                            }
+                        } catch (error) {
+                            handleUploadError(error);
+                        }
+                    } else {
+                        handleUploadError(new Error(`Server returned status ${xhr.status}`));
+                    }
+                });
+                
+                xhr.addEventListener('error', function() {
+                    handleUploadError(new Error('Network error occurred'));
+                });
+                
+                xhr.addEventListener('abort', function() {
+                    progressBar.classList.remove('bg-danger');
+                    statusText.textContent = 'Upload cancelled';
+                    setTimeout(() => {
+                        progressContainer.classList.add('d-none');
+                    }, 2000);
+                });
+                
+                // Send the upload request
+                xhr.open('POST', '/Home/SystemConfiguration/UploadBackup', true);
+                xhr.setRequestHeader('RequestVerificationToken', 
+                    document.querySelector('input[name="__RequestVerificationToken"]').value);
+                xhr.send(formData);
+                
+                function handleUploadError(error) {
+                    console.error('Upload error:', error);
+                    progressBar.classList.remove('bg-success');
+                    progressBar.classList.add('bg-danger');
+                    statusText.textContent = `Error: ${error.message}`;
+                    showAlert(`Error uploading backup: ${error.message}`, 'danger');
+                }
+            }
 
             // Function to load backup list
             function loadBackupList() {
@@ -139,6 +586,10 @@
                     const tbody = document.getElementById('backupListBody');
                     tbody.innerHTML = '';
 
+                    // Enable/disable restore button based on available backups
+                    const restoreButton = document.getElementById('restoreBackupBtn');
+                    restoreButton.disabled = data.length === 0;
+
                     if (data.length === 0) {
                         tbody.innerHTML = '<tr><td colspan="4" class="text-center">No backups available</td></tr>';
                         return;
@@ -146,45 +597,86 @@
 
                     data.forEach(backup => {
                         const row = document.createElement('tr');
+                        const createdDate = new Date(backup.created);
                         row.innerHTML = `
-                            <td>${backup.fileName}</td>
-                            <td>${new Date(backup.created).toLocaleString()}</td>
+                            <td>
+                                <i class="fas fa-database text-secondary me-2"></i>
+                                ${backup.fileName}
+                            </td>
+                            <td>${createdDate.toLocaleDateString()} ${createdDate.toLocaleTimeString()}</td>
                             <td>${formatFileSize(backup.size)}</td>
                             <td>
-                                <button class="btn btn-sm btn-outline-primary download-btn"
-                                        data-filename="${backup.fileName}">
-                                    <i class="fas fa-download"></i>
-                                </button>
-                                <button class="btn btn-sm btn-outline-danger delete-btn ms-1"
-                                        data-filename="${backup.fileName}">
-                                    <i class="fas fa-trash"></i>
-                                </button>
+                                <div class="btn-group">
+                                    <button class="btn btn-sm btn-outline-primary download-btn"
+                                            title="Download backup"
+                                            data-filename="${backup.fileName}">
+                                        <i class="fas fa-download"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-warning restore-btn"
+                                            title="Restore from this backup"
+                                            data-filename="${backup.fileName}">
+                                        <i class="fas fa-undo"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-danger delete-btn"
+                                            title="Delete backup"
+                                            data-filename="${backup.fileName}">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
                             </td>
                         `;
                         tbody.appendChild(row);
                     });
 
-                    // Add event listeners to new buttons
-                    document.querySelectorAll('.download-btn').forEach(btn => {
-                        btn.addEventListener('click', function() {
-                            const fileName = this.getAttribute('data-filename');
-                            window.location.href = `/Home/SystemConfiguration/DownloadBackup?fileName=${encodeURIComponent(fileName)}`;
-                        });
-                    });
+                    // Update last backup date
+                    if (data.length > 0) {
+                        document.getElementById('lastBackup').textContent = 
+                            new Date(data[0].created).toLocaleString();
+                    }
 
-                    document.querySelectorAll('.delete-btn').forEach(btn => {
-                        btn.addEventListener('click', function() {
-                            const fileName = this.getAttribute('data-filename');
-                            if (confirm(`Are you sure you want to delete backup "${fileName}"?`)) {
-                                deleteBackup(fileName);
-                            }
-                        });
-                    });
+                    // Add event listeners to buttons
+                    attachButtonEventListeners();
                 })
                 .catch(error => {
                     console.error('Error loading backup list:', error);
                     document.getElementById('backupListBody').innerHTML =
                         '<tr><td colspan="4" class="text-center text-danger">Error loading backups</td></tr>';
+                });
+            }
+
+            function attachButtonEventListeners() {
+                // Download buttons
+                document.querySelectorAll('.download-btn').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const fileName = this.getAttribute('data-filename');
+                        window.location.href = `/Home/SystemConfiguration/DownloadBackup?fileName=${encodeURIComponent(fileName)}`;
+                    });
+                });
+
+                // Restore buttons
+                document.querySelectorAll('.restore-btn').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const fileName = this.getAttribute('data-filename');
+                        selectedRestoreFileName = fileName;
+                        document.getElementById('restoreFileName').textContent = fileName;
+                        
+                        // Reset restore modal state
+                        document.getElementById('restoreProgressContainer').classList.add('d-none');
+                        document.getElementById('confirmRestoreCheckbox').checked = false;
+                        document.getElementById('confirmRestoreBtn').disabled = true;
+                        
+                        restoreModal.show();
+                    });
+                });
+
+                // Delete buttons
+                document.querySelectorAll('.delete-btn').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const fileName = this.getAttribute('data-filename');
+                        if (confirm(`Are you sure you want to delete backup "${fileName}"?`)) {
+                            deleteBackup(fileName);
+                        }
+                    });
                 });
             }
 
@@ -201,6 +693,9 @@
                 // Show modal
                 backupModal.show();
 
+                // Get the backup location from settings
+                const backupLocation = document.getElementById('backupLocation').value;
+
                 // Start backup
                 fetch('/Home/SystemConfiguration/CreateBackup', {
                     method: 'POST',
@@ -208,7 +703,10 @@
                         'Accept': 'application/json',
                         'Content-Type': 'application/json',
                         'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
-                    }
+                    },
+                    body: JSON.stringify({
+                        backupLocation: backupLocation
+                    })
                 })
                 .then(response => {
                     if (!response.ok) {
@@ -232,6 +730,9 @@
 
                         currentBackupFileName = data.fileName;
 
+                        // Update last backup date
+                        document.getElementById('lastBackup').textContent = new Date().toLocaleString();
+
                         // Reload backup list
                         loadBackupList();
                     } else {
@@ -242,7 +743,67 @@
                     console.error('Backup error:', error);
                     document.getElementById('backupProgressContainer').classList.add('d-none');
                     document.getElementById('backupErrorAlert').classList.remove('d-none');
-                    document.getElementById('errorMessage').textContent = error.message;
+                    
+                    // Provide a more detailed error message with troubleshooting help for permissions issues
+                    let errorMessage = error.message;
+                    if (error.message.includes('Access is denied') || error.message.includes('permission')) {
+                        errorMessage = `Permission error: SQL Server cannot write to the backup location. Please check folder permissions or use a different location. <a href="#" data-bs-dismiss="modal" data-bs-toggle="modal" data-bs-target="#permissionsHelpModal">Help with permissions</a>`;
+                        document.getElementById('errorMessage').innerHTML = errorMessage;
+                    } else {
+                        document.getElementById('errorMessage').textContent = errorMessage;
+                    }
+                });
+            }
+
+            // Function to start restore process
+            function startRestoreProcess(fileName) {
+                // Show progress and disable confirm button
+                document.getElementById('restoreProgressContainer').classList.remove('d-none');
+                document.getElementById('confirmRestoreBtn').disabled = true;
+                document.getElementById('restoreProgressBar').style.width = '0%';
+                document.getElementById('restoreStatusText').textContent = 'Starting database restore...';
+
+                fetch('/Home/SystemConfiguration/RestoreBackup', {
+                    method: 'POST',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                    },
+                    body: JSON.stringify({ fileName: fileName })
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        return response.text().then(text => {
+                            throw new Error(text.includes('<!DOCTYPE') ?
+                                'Server returned an error page' : text);
+                        });
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    // Update progress to 100%
+                    document.getElementById('restoreProgressBar').style.width = '100%';
+                    document.getElementById('restoreStatusText').textContent = 'Restore completed!';
+                    
+                    // Close modal after delay
+                    setTimeout(() => {
+                        restoreModal.hide();
+                        if (data.success) {
+                            showAlert('Database restored successfully', 'success');
+                            
+                            // Refresh database info
+                            loadDatabaseInfo();
+                        } else {
+                            throw new Error(data.message || 'Restore failed');
+                        }
+                    }, 1500);
+                })
+                .catch(error => {
+                    console.error('Restore error:', error);
+                    document.getElementById('restoreStatusText').textContent = `Error: ${error.message}`;
+                    document.getElementById('restoreProgressBar').classList.remove('bg-warning');
+                    document.getElementById('restoreProgressBar').classList.add('bg-danger');
                 });
             }
 
@@ -308,26 +869,63 @@
     </script>
 }
 
-    <style>
-        .progress {
-            height: 1.5rem;
-        }
+<style>
+    .progress {
+        height: 1.5rem;
+    }
 
-        .progress-bar {
-            transition: width 0.3s ease;
-        }
+    .progress-bar {
+        transition: width 0.3s ease;
+    }
 
-        #backupTable th {
-            font-weight: 500;
-            background-color: #f8f9fa;
-        }
+    #backupTable th {
+        font-weight: 500;
+        background-color: #f8f9fa;
+    }
 
-        .download-btn:hover {
-            color: #0d6efd;
-        }
+    .download-btn:hover {
+        color: #0d6efd;
+    }
 
-        .delete-btn:hover {
-            color: #dc3545;
-        }
-    </style>
-}
+    .delete-btn:hover {
+        color: #dc3545;
+    }
+    
+    .border-dashed {
+        border: 1px dashed #dee2e6;
+        border-radius: 0.25rem;
+    }
+    
+    .btn-group .btn {
+        border-radius: 0;
+    }
+    
+    .btn-group .btn:first-child {
+        border-top-left-radius: 0.25rem;
+        border-bottom-left-radius: 0.25rem;
+    }
+    
+    .btn-group .btn:last-child {
+        border-top-right-radius: 0.25rem;
+        border-bottom-right-radius: 0.25rem;
+    }
+
+    /* Additional styles for new elements */
+    .form-text {
+        font-size: 0.8rem;
+        margin-top: 0.25rem;
+    }
+    
+    .modal-body h6 {
+        color: #495057;
+        font-weight: 600;
+    }
+    
+    .modal-body ol li {
+        margin-bottom: 1rem;
+    }
+    
+    .modal-body ol ol {
+        margin-top: 0.5rem;
+    }
+</style>

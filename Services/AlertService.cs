@@ -51,7 +51,7 @@ public class AlertService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error occurred while checking and creating alerts");
-            throw; // Re-throw to allow caller to handle
+            throw; // Rethrow to allow caller to handle
         }
     }
 
@@ -117,7 +117,7 @@ public class AlertService
             Message = $"{alertLevel} air quality detected at {sensor.LocationName} (AQI: {aqi})",
             AlertType = GetAlertType(alertLevel),
             CreatedAt = DateTime.UtcNow,
-            CreatedForUserId = null // Set this if you have user-specific notifications
+            CreatedForUserId = null
         };
 
         _context.AlertNotifications.Add(notification);

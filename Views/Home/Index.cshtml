@@ -616,14 +616,13 @@ document.addEventListener("DOMContentLoaded", function() {
         const historicalDataBody = document.getElementById("historicalDataBody");
         historicalDataBody.innerHTML = ''; // Clear previous data
 
-        // Check if table should show "no data" message
         if (!data || data.length === 0) {
             historicalDataBody.innerHTML = '<tr><td colspan="8" class="text-center">No data available for the selected period.</td></tr>';
             return;
         }
 
         data.forEach(record => {
-            // Check if the timestamp is valid before formatting
+            // Check if the timestamp is valid
             let formattedTimestamp = 'Invalid Date';
             if (record.timestamp) {
                 const date = new Date(record.timestamp);
@@ -633,7 +632,6 @@ document.addEventListener("DOMContentLoaded", function() {
                 }
             }
 
-            // Format numeric values with 2 decimal places when present
             const formatValue = (value) => {
                 if (value === undefined || value === null) return 'N/A';
                 return typeof value === 'number' ? value.toFixed(2) : value;
@@ -702,7 +700,6 @@ document.addEventListener("DOMContentLoaded", function() {
             }
         }
         
-        // Continue with the existing filter logic
         const filteredData = historicalData.filter(record => {
             try {
                 const recordDate = new Date(record.timestamp);
@@ -713,10 +710,7 @@ document.addEventListener("DOMContentLoaded", function() {
             }
         });
         
-        // Rest of the function remains the same...
-        // ...
-        
-        // Sort data by timestamp (oldest first)
+        // Sort data by timestamp
         filteredData.sort((a, b) => {
             try {
                 return new Date(a.timestamp) - new Date(b.timestamp);
@@ -729,7 +723,6 @@ document.addEventListener("DOMContentLoaded", function() {
         if (filteredData.length === 0) {
             document.getElementById('chartNoData').style.display = 'block';
             document.getElementById('chartNoData').innerText = 'No data available for the selected time period.';
-            // Clear any existing chart
             if (analyticsChart) {
                 analyticsChart.destroy();
                 analyticsChart = null;
@@ -737,7 +730,6 @@ document.addEventListener("DOMContentLoaded", function() {
             return;
         }
         
-        // Hide no data message
         document.getElementById('chartNoData').style.display = 'none';
         
         updateChart(filteredData, metric);
